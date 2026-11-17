@@ -20,7 +20,7 @@
 | 阶段 | 目标 | 交付物 | 预估 | 状态 |
 |---|---|---|---|---|
 | **M0** | 工程骨架 + 契约验证 | 可编译 App、XcodeGen、APIClient、模型、自检页、fixtures 计划 | 2–3 人日 | **进行中** |
-| **M1** | 应用外壳 + 基础设施 | 设计 token、Tab、导航、Session、LocalLibrary、LineStore、错误/toast | 3–4 人日 | 待开始 |
+| **M1** | 应用外壳 + 基础设施 | 设计 token、Tab、导航、Session、LocalLibrary、LineStore、错误/toast | 3–4 人日 | ✅ 完成 |
 | **M2** | 首页 + 播放器 | 竖滑 Feed、单 AVPlayer、封面、续播、手势、选集/评论入口 | 6–8 人日 | 待开始 |
 | **M3** | 详情 + 互动 | 详情、选集、评论、点赞/收藏/关注、登录拦截 | 5–7 人日 | 待开始 |
 | **M4** | 搜索 + 分类 + 榜单 | 搜索历史、频道、三榜单 | 3–4 人日 | 待开始 |
@@ -60,7 +60,7 @@
 
 ![M0 启动截图](m0-launch.png)
 
-## 4. M1：应用外壳 + 基础设施
+## 4. M1：应用外壳 + 基础设施（完成）
 
 | ID | 任务 | 验收 |
 |---|---|---|
@@ -69,9 +69,19 @@
 | M1-03 | `SessionStore`（Valet）+ 启动恢复 | 存/读/清 token；重启保持 |
 | M1-04 | `LocalLibrary`（Defaults） | 收藏/历史/搜索历史读写；历史 80 条上限 |
 | M1-05 | `LineStore`（固定 + 持久化） | 切换重启沿用 |
-| M1-06 | `ToastCenter` + 全局错误文案 | 401/网络/业务错误展示 |
-| M1-07 | `AppDependencies` 组合根 + Environment 注入 | 可替换 fake |
+| M1-06 | Toast + 全局错误文案（`AppState.showToast/showError`） | 401/网络/业务错误展示 |
+| M1-07 | `AppDependencies` 组合根 + 显式注入（`AppState` 用 Environment） | 可替换 fake |
 | M1-08 | 登录 sheet 空壳 | 打开/关闭；未登录拦截可触发 |
+
+**M1 验证记录（2026-11-17）**：
+
+- DesignSystem：`Color` 语义 token + `HGPrimaryButtonStyle` / `HGSecondaryButtonStyle` / `HGChip` / `HGAvatar` / `HGEmptyState` / `HGSkeleton` / `HGSectionHeader`。
+- 导航：四个 Tab 各一个 `NavigationStack(path: [Route])`；`channel / ranks / settings / posts / post` 都有 destination；设置页可进线路选择，我的页可进设置与登录壳。
+- 会话：`AppDependencies.bootstrap` 启动时把持久化线路注入 `APIClient`，恢复 `SessionStore` 的登录态并注入 token。
+- `LocalLibrary`：收藏/喜欢/关注/观看历史/搜索历史；历史 80 条、搜索 12 条；集数变化进度归零；跨实例持久化。
+- `LineStore`：固定线路 1/2、地址校验、持久化、重启沿用。
+- 主题：`AppState.theme` 写入 Defaults，切换即时生效。
+- 测试：**15 个单测 / 6 suites + 5 个 UI 测试**，`TEST SUCCEEDED`。
 
 ## 5. M2：首页 + 播放器
 
@@ -190,15 +200,16 @@ xcodebuild -project HGHub.xcodeproj -scheme HGHub \
 |---|---|---|
 | 2026-11-17 | 规划 | 确定路线 A、iOS 17、并行目录、依赖清单、架构 |
 | 2026-11-17 | M0 | 六份文档完成；XcodeGen/SPM 解析通过；APIClient + 模型 + 封面解码器落地；7 个单测 + 3 个 UI 测试通过；Feed/Playback/封面真实联调通过（系统代理） |
+| 2026-11-17 | M1 | DesignSystem、导航/设置/我的/登录壳、Session 启动恢复、LocalLibrary、LineStore、主题持久化；15 个单测 + 5 个 UI 测试通过 |
 
 ## 15. 下一步
 
-**当前指针：M1-01 设计系统 / M1-02 导航与 Tab 补齐。**
+**当前指针：M2-01 首页分页 / M2-02 FeedPager。**
 
 具体动作：
-1. 把 `DesignSystem` 从占位 Color 扩成颜色/字体/间距/按钮/Chip/Avatar/空态/骨架。
-2. 补齐 `Route` 与各 Tab 的 `navigationDestination`（频道/榜单/设置/吃瓜/帖子）。
-3. 接 `SessionStore` 到 `AppState`，启动恢复登录态。
-4. 接 `LocalLibrary`（Defaults）与 `LineStore`，为 M2 做准备。
+1. `HomeViewModel` 接 `VideoRepository.feed`，完成首屏 / 加载更多 / 去重 / 错误重试。
+2. `FeedPager`（UICollectionView）搭竖滑分页，先接封面与标题。
+3. `PlayerCoordinator` + `PlayerSurface` 接 AVPlayer，完成单播放器与切条续播。
+4. 手势仲裁与选集/评论入口放在 M2 后半段，按架构 7.5 的规则实现。
 
 > 每完成一个任务，把本表对应状态改成 ✅，并在第 14 节加一行；不要等整个 milestone 结束再补。

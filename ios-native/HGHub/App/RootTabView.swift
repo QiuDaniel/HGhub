@@ -10,6 +10,7 @@ enum AppTab: Hashable {
 struct RootTabView: View {
     let deps: AppDependencies
 
+    @Environment(AppState.self) private var app
     @State private var tab: AppTab = .home
     @State private var homePath: [Route] = []
     @State private var searchPath: [Route] = []
@@ -17,6 +18,8 @@ struct RootTabView: View {
     @State private var profilePath: [Route] = []
 
     var body: some View {
+        @Bindable var app = app
+
         TabView(selection: $tab) {
             NavigationStack(path: $homePath) {
                 HomeView(deps: deps)
@@ -40,31 +43,34 @@ struct RootTabView: View {
             .tag(AppTab.category)
 
             NavigationStack(path: $profilePath) {
-                ProfileView()
+                ProfileView(deps: deps)
                     .navigationDestination(for: Route.self) { destination($0) }
             }
             .tabItem { Label("我的", systemImage: "person") }
             .tag(AppTab.profile)
         }
         .tint(Color.hgPrimary)
+        .task {
+            await deps.bootstrap(app: app)
+        }
+        .sheet(isPresented: $app.loginPresented) {
+            LoginSheet()
+        }
     }
 
     @ViewBuilder
     private func destination(_ route: Route) -> some View {
         switch route {
         case .channel(let cate, let name):
-            Text("频道 \(name)（\(cate)）")
-                .navigationTitle(name)
+            ChannelView(cate: cate, name: name)
         case .ranks:
-            Text("榜单")
-                .navigationTitle("榜单")
+            RankView()
         case .settings:
-            SettingsView()
+            SettingsView(deps: deps)
         case .posts:
             PostsView()
         case .post(let id):
-            Text("帖子 \(id)")
-                .navigationTitle("帖子")
+            PostDetailView(id: id)
         }
     }
 }

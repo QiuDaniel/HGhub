@@ -37,6 +37,41 @@ final class M0SmokeUITests: XCTestCase {
         XCTAssertTrue(success.waitForExistence(timeout: 30), "Playback 应通过系统代理返回播放地址")
     }
 
+    func testProfileSettingsAndLinePicker() {
+        let app = XCUIApplication()
+        app.launch()
+
+        let profile = app.tabBars.buttons["我的"]
+        XCTAssertTrue(profile.waitForExistence(timeout: 10), "应有我的 Tab")
+        profile.tap()
+        XCTAssertTrue(app.navigationBars["我的"].waitForExistence(timeout: 5))
+
+        let settings = app.buttons.matching(NSPredicate(format: "label CONTAINS '设置'")).firstMatch
+        XCTAssertTrue(settings.waitForExistence(timeout: 5), "我的页应有设置入口")
+        settings.tap()
+        XCTAssertTrue(app.navigationBars["设置"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.switches["深色外观"].waitForExistence(timeout: 5))
+
+        let line = app.buttons.matching(NSPredicate(format: "label CONTAINS '线路'")).firstMatch
+        XCTAssertTrue(line.waitForExistence(timeout: 5), "设置页应有线路入口")
+        line.tap()
+        XCTAssertTrue(app.navigationBars["线路"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["关闭"].waitForExistence(timeout: 5))
+    }
+
+    func testLoginSheetOpens() {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.tabBars.buttons["我的"].tap()
+        let login = app.buttons["登录 / 注册"]
+        XCTAssertTrue(login.waitForExistence(timeout: 10), "未登录时我的页应有登录入口")
+        login.tap()
+
+        XCTAssertTrue(app.navigationBars["登录"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["关闭"].exists)
+    }
+
     func testContractCheckOpens() {
         let app = XCUIApplication()
         app.launch()
