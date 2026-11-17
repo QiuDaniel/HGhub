@@ -1,0 +1,43 @@
+import Foundation
+import Observation
+
+/// 全局状态只放跨屏的四类：登录态、主题、全屏播放、登录弹层/Toast。
+/// 视频列表、搜索词、播放进度属于 Feature 本地状态，不进这里。
+@MainActor
+@Observable
+final class AppState {
+    var session: Session?
+    var theme: Theme = .dark
+    var feed: FeedContext?
+    var loginPresented = false
+    var toast: Toast?
+
+    func showToast(_ message: String, icon: Toast.Icon = .info) {
+        let next = Toast(message: message, icon: icon)
+        toast = next
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(2200))
+            guard let self, self.toast?.id == next.id else { return }
+            self.toast = nil
+        }
+    }
+}
+
+struct Toast: Identifiable, Sendable {
+    enum Icon: String, Sendable {
+        case info
+        case ok
+        case heart
+        case star
+    }
+
+    let id: UUID
+    let message: String
+    let icon: Icon
+
+    init(message: String, icon: Icon = .info) {
+        self.id = UUID()
+        self.message = message
+        self.icon = icon
+    }
+}

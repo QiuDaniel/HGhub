@@ -1,0 +1,134 @@
+name: HGHub
+options:
+  bundleIdPrefix: com.hghub
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    CODE_SIGN_STYLE: Automatic
+
+packages:
+  Nuke:
+    url: https://github.com/kean/Nuke
+    exactVersion: 13.2.3
+  SwiftSoup:
+    url: https://github.com/scinfu/SwiftSoup
+    exactVersion: 2.14.4
+  ZMarkupParser:
+    url: https://github.com/ZhgChgLi/ZMarkupParser
+    exactVersion: 2.0.2
+  ZNSTextAttachment:
+    url: https://github.com/ZhgChgLi/ZNSTextAttachment
+    exactVersion: 1.2.0
+  CryptoSwift:
+    url: https://github.com/krzyzanowskim/CryptoSwift
+    exactVersion: 1.10.0
+  Valet:
+    url: https://github.com/square/Valet
+    exactVersion: 5.1.1
+  Defaults:
+    url: https://github.com/sindresorhus/Defaults
+    exactVersion: 9.0.9
+  AlertToast:
+    url: https://github.com/elai950/AlertToast
+    exactVersion: 1.3.9
+  Pulse:
+    url: https://github.com/kean/Pulse
+    exactVersion: 5.2.3
+
+targets:
+  HGHub:
+    type: application
+    platform: iOS
+    sources:
+      - path: HGHub
+    dependencies:
+      - package: Nuke
+        product: Nuke
+      - package: Nuke
+        product: NukeUI
+      - package: SwiftSoup
+        product: SwiftSoup
+      - package: ZMarkupParser
+        product: ZMarkupParser
+      - package: ZNSTextAttachment
+        product: ZNSTextAttachment
+      - package: CryptoSwift
+        product: CryptoSwift
+      - package: Valet
+        product: Valet
+      - package: Defaults
+        product: Defaults
+      - package: AlertToast
+        product: AlertToast
+      - package: Pulse
+        product: Pulse
+      - package: Pulse
+        product: PulseProxy
+      - package: Pulse
+        product: PulseUI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hghub.native
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: HGhub
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.entertainment
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_PREVIEWS: YES
+        SWIFT_STRICT_CONCURRENCY: complete
+
+  HGHubTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: HGHubTests
+        excludes:
+          - Fixtures
+      - path: HGHubTests/Fixtures
+        buildPhase: resources
+    dependencies:
+      - target: HGHub
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hghub.native.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+  HGHubUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: HGHubUITests
+    dependencies:
+      - target: HGHub
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hghub.native.uitests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  HGHub:
+    build:
+      targets:
+        HGHub: all
+        HGHubTests: [test]
+        HGHubUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - HGHubTests
+        - HGHubUITests

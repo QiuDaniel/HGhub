@@ -1,0 +1,28 @@
+{
+  "data": {
+    "mode": 1,
+    "timestamp": 1794925200,
+    "manifest_method": "GET",
+    "cdn": {
+      "m3u8Enabled": true,
+      "otherEnabled": false,
+      "authKey": "x-cdn-auth",
+      "authValue": "REDACTED",
+      "app": "150",
+      "imgEnabled": false,
+      "imgAuthKey": "x-cdn-auth",
+      "imgAuthValue": "REDACTED"
+    },
+    "id": "117",
+    "ep": 3,
+    "media_id": "",
+    "streams": {
+      "main": "https://yd-lphu-hls.tjyyjk.cn/videos5/247f3c9862e8e1537ade0b20c45ac962/247f3c9862e8e1537ade0b20c45ac962.m3u8?auth_key=REDACTED&v=3&time=0&via=dx150&via_bm=dx",
+      "hevc": "",
+      "preview": "https://yd-lphu-hls.tjyyjk.cn/videos5/247f3c9862e8e1537ade0b20c45ac962/247f3c9862e8e1537ade0b20c45ac962.m3u8?auth_key=REDACTED&v=3&time=0&via=dx150&via_bm=dx"
+    }
+  },
+  "status": 1,
+  "msg": "",
+  "req_time": 1794917758
+}
