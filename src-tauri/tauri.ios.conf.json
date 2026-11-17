@@ -15,8 +15,8 @@
     ]
   },
   "bundle": {
-    "ios": {
-      "minimumSystemVersion": "13.0"
+    "iOS": {
+      "minimumSystemVersion": "15.0"
     }
   }
 }

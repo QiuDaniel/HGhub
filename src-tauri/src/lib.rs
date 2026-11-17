@@ -1,4 +1,6 @@
 mod api;
+#[cfg(target_os = "ios")]
+mod ios_viewport;
 mod lines;
 mod media;
 mod net;
@@ -12,6 +14,11 @@ pub fn run() {
     tauri::Builder::default()
         .manage(Api::new())
         .setup(|app| {
+            // iOS：把 WKWebView 的安全区 inset 关掉，否则视口比屏幕矮（顶部+底部安全区），
+            // 底部露出一条白边。见 src/ios_viewport.rs 顶部说明。
+            #[cfg(target_os = "ios")]
+            ios_viewport::install(app.handle());
+
             if let Ok(dir) = app.path().app_data_dir() {
                 let _ = std::fs::create_dir_all(&dir);
                 // 上次选择的线路（设置 → 线路）在启动时恢复

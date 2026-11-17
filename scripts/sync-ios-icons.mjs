@@ -17,14 +17,15 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = join(root, "src-tauri", "icons", "ios");
-const dest = join(root, "src-tauri", "gen", "ios", "App", "App", "Assets.xcassets", "AppIcon.appiconset");
+// Tauri 2 生成的 iOS 工程在 src-tauri/gen/apple/（不是 gen/ios/App/App/）
+const dest = join(root, "src-tauri", "gen", "apple", "Assets.xcassets", "AppIcon.appiconset");
 
 if (!existsSync(src)) {
   console.log(`[icons] 跳过：缺少 ${src}`);
   process.exit(0);
 }
 if (!existsSync(dest)) {
-  console.log("[icons] 跳过：gen/ios 还没生成（先跑 tauri ios init）");
+  console.log("[icons] 跳过：gen/apple 还没生成（先跑 tauri ios init）");
   process.exit(0);
 }
 
