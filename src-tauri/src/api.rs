@@ -293,10 +293,10 @@ pub async fn api_category(
     page: u32,
     size: u32,
 ) -> Result<Value, String> {
+    // 分类必须用**数字** `cate_id`。旧写法 `/api/videos/category/{slug}` 已被上游下架，
+    // 返回 410 {"msg":"内容已下线"}（2026-11-17 实测；`category_id` 会被忽略并返回全量）。
     state
-        .get(&format!(
-            "/api/videos/category/{cate}?page={page}&size={size}"
-        ))
+        .get(&format!("/api/videos?cate_id={cate}&page={page}&size={size}"))
         .await
 }
 
@@ -343,9 +343,71 @@ pub async fn api_video(state: State<'_, Api>, id: i64) -> Result<Value, String> 
 
 #[tauri::command]
 pub async fn api_play(state: State<'_, Api>, id: i64, ep: u32) -> Result<Value, String> {
-    state
-        .get(&format!("/api/videos/{id}/play?ep={ep}&page_texts=0"))
-        .await
+    let token = state.token();
+    // 现行接口：POST /api/videos/{id}/episodes/{ep}/playback（直连，body 必须是空 JSON）。
+    // 见 net::post_json 的注释，以及 lines.rs 顶部关于上游改版的说明。
+    match play_via_playback(id, ep, token.as_deref()).await {
+        Ok(v) => Ok(v),
+        // 兜底：老部署/部分镜像还没上 playback 接口，退回旧的 /play（新接口正常时不会走到这里）
+        Err(new_err) => match state
+            .get(&format!("/api/videos/{id}/play?ep={ep}&page_texts=0"))
+            .await
+        {
+            Ok(old) => Ok(old),
+            Err(_) => Err(new_err),
+        },
+    }
+}
+
+/// 解析 `POST /api/videos/{id}/episodes/{ep}/playback`，并归一化成前端 `PlayInfo` 的形状。
+///
+/// 上游返回：`{ "data": { "streams": { "main": "...", "hevc": "...", "preview": "..." },
+///                        "cdn": { "authKey": "x-cdn-auth", "authValue": "..." }, ... } }`
+/// 老的 `video_url` 字段已经没有了（该接口返回空串），所以这里必须换成 `streams`。
+async fn play_via_playback(id: i64, ep: u32, token: Option<&str>) -> Result<Value, String> {
+    let raw = crate::net::post_json(
+        &format!("/api/videos/{id}/episodes/{ep}/playback"),
+        json!({}),
+        token,
+    )
+    .await?;
+
+    if raw.get("status").and_then(|v| v.as_i64()) == Some(0) {
+        return Err(raw
+            .get("msg")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty())
+            .unwrap_or("上游拒绝播放请求")
+            .to_string());
+    }
+
+    let data = raw.get("data").unwrap_or(&raw);
+    let streams = data.get("streams").cloned().unwrap_or(Value::Null);
+    let pick = |key: &str| -> Option<String> {
+        streams
+            .get(key)
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+    };
+
+    // 优先标准 HLS，其次 HEVC 清单，最后预告片
+    let main = pick("main")
+        .or_else(|| pick("hevc"))
+        .or_else(|| pick("preview"))
+        .ok_or_else(|| "上游没有返回播放地址".to_string())?;
+
+    Ok(json!({
+        "id": id,
+        "ep_num": ep,
+        "title": format!("第{ep}集"),
+        "duration": 0,
+        "video_url": main,
+        "video_url_hevc": pick("hevc"),
+        // CDN 可能要求清单/分片带这个头（authKey 是头名、authValue 是值）。
+        // 目前实测不带也能取，留着方便上游收紧时兜底。
+        "cdn": data.get("cdn").cloned().unwrap_or(Value::Null),
+    }))
 }
 
 /* ───────────────────────── 评论 / 互动 ───────────────────────── */

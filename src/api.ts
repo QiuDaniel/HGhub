@@ -229,3 +229,16 @@ export function directMedia(url: string): string {
 export function mediaUrl(url: string): string {
   return /\.m3u8(\?|$)/i.test(url) ? playlist(url) : directMedia(url);
 }
+
+/** 交给 `<video>` 的最终地址。
+ *
+ *  iOS 必须**直连**上游：`<video>` 在 WKWebView 里由 AVFoundation/AVPlayer 拉流，
+ *  而 WKURLSchemeHandler（`hg://localhost`）只对 WebKit 自己的网络栈生效，
+ *  AVPlayer 拿到自定义协议会直接 MEDIA_ERR_SRC_NOT_SUPPORTED（`video/4`，2026-11-17 模拟器实测）。
+ *  CDN 的清单/密钥/分片都是公开 HTTPS，AVPlayer 原生支持 AES-128 HLS，不需要我们改写。
+ *  其它平台仍走本地协议：Windows/Android 的 WebView 需要它绕 CORS，且能复用我们的解密链路。 */
+export function playSrc(url: string): string {
+  if (!url) return "";
+  if (isLocalMedia(url)) return url;
+  return preferNativeHls ? url : mediaUrl(url);
+}

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
-import { asWkVideo, fmtTime, hasElementFullscreen, playlist, preferNativeHls } from "../api";
+import { asWkVideo, fmtTime, hasElementFullscreen, playSrc, preferNativeHls } from "../api";
 import { ICompress, IExpand, IPauseF, IPlayF, IVol, IVolMute } from "../icons";
 
 type Props = {
@@ -37,7 +37,7 @@ export default function Player({
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !src) return;
-    const url = playlist(src);
+    const url = playSrc(src);
 
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
 

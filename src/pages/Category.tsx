@@ -6,11 +6,14 @@ import { Masonry, RowCard } from "../components/cards";
 import { Empty, Img } from "../components/ui";
 import { IBack, IChevR, IGrid, ITrophy } from "../icons";
 
+/** `cate` 是上游的**数字 cate_id**，不是 slug。
+ *  旧写法 `/api/videos/category/{slug}` 已被上游下架（410 内容已下线），
+ *  数字 id 走 `/api/videos?cate_id=` 才有效（2026-11-17 实测 24/25 有内容，26/27 已清空）。 */
 export const CHANNELS = [
-  { cate: "ai-duanju", name: "AI成人短剧", desc: "高能反转 · 一口气看完" },
-  { cate: "ai-manju", name: "AI成人漫剧", desc: "国创漫剧 · 每周更新" },
-  { cate: "ai-huanlian", name: "AI换脸", desc: "换脸演绎 · 全新剧情" },
-  { cate: "ai-mogai", name: "AI魔改", desc: "魔改名场面 · 脑洞大开" },
+  { cate: "24", name: "AI成人短剧", desc: "高能反转 · 一口气看完" },
+  { cate: "25", name: "AI成人漫剧", desc: "国创漫剧 · 每周更新" },
+  { cate: "26", name: "AI换脸", desc: "换脸演绎 · 全新剧情" },
+  { cate: "27", name: "AI魔改", desc: "魔改名场面 · 脑洞大开" },
 ] as const;
 
 /* ================= 分类总览 ================= */
@@ -43,12 +46,16 @@ export default function Category({ wide }: { wide: boolean }) {
     return () => { alive = false; };
   }, []);
 
+  /* 上游下架的频道（接口 status=1 但 0 条）加载完就隐藏，不再摆一个空货架；
+     哪天上游恢复内容，这里会自动重新出现 */
+  const visible = loading ? CHANNELS : CHANNELS.filter((c) => (rows[c.cate] || []).length > 0);
+
   return (
     <div className="absolute inset-0 bg-bg flex flex-col">
       <div className="shrink-0 px-4 pb-1" style={{ paddingTop: "calc(var(--sat, 0px) + 14px)" }}>
         <div className="flex items-end gap-2.5">
           <span className="text-[24px] font-bold text-on leading-none">分类</span>
-          <span className="text-[11px] text-mut pb-0.5">{CHANNELS.length + 1} 个频道 · 每周持续上新</span>
+          <span className="text-[11px] text-mut pb-0.5">{visible.length + 1} 个频道 · 每周持续上新</span>
         </div>
       </div>
 
@@ -64,7 +71,7 @@ export default function Category({ wide }: { wide: boolean }) {
           <IChevR size={16} className="text-mut" />
         </button>
 
-        {CHANNELS.map((c, ci) => {
+        {visible.map((c, ci) => {
           const list = rows[c.cate] || [];
           return (
             <section key={c.cate} className="mb-5 a-rise" style={{ animationDelay: `${Math.min(ci * 50, 300)}ms` }}>

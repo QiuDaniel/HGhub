@@ -50,13 +50,19 @@ export type Detail = {
   created_at?: string;
 };
 
+/** 播放信息。
+ *  上游现行接口是 `/api/videos/{id}/episodes/{ep}/playback`，返回 `streams.main`；
+ *  老接口的 `video_url` 已废弃（返回空串），后端会归一化成现在的形状。
+ *  `duration` / `title` 只做展示兜底，接口不一定给。 */
 export type PlayInfo = {
   id: number;
   ep_num: number;
-  duration: number;
-  title: string;
+  duration?: number;
+  title?: string;
   video_url: string;
   video_url_hevc?: string;
+  /** CDN 鉴权头（authKey 是头名，authValue 是值），目前为可选 */
+  cdn?: { authKey?: string; authValue?: string } | null;
 };
 
 export type RankItem = {

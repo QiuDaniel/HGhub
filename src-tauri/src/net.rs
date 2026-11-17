@@ -330,6 +330,52 @@ pub async fn edge(
     }
 }
 
+/// 直连 REST：**不走** `/api/edge/request` 信封。
+///
+/// 上游有些接口不在信封里，典型是播放接口 `/api/videos/{id}/episodes/{ep}/playback`
+/// —— 走信封会得到 `{"error":"请求无法处理"}`（2026-11-17 实测）。
+/// 返回完整 JSON（含 `status` / `data` 外层），由调用方自己解包。
+pub async fn post_json(path: &str, body: Value, token: Option<&str>) -> Result<Value, String> {
+    let cur = base();
+    let url = format!("{cur}{path}");
+    let referer = format!("{cur}/");
+    let token = token.map(|s| s.to_string());
+
+    with_retry(|client: reqwest::Client| {
+        let body = body.clone();
+        let url = url.clone();
+        let referer = referer.clone();
+        let token = token.clone();
+        async move {
+            let mut req = client
+                .post(&url)
+                .header("Accept", "application/json")
+                .header("Referer", &referer)
+                .json(&body);
+            if let Some(t) = token.as_deref() {
+                if !t.is_empty() {
+                    req = req.header("Authorization", format!("Bearer {t}"));
+                }
+            }
+            let resp = req.send().await.map_err(|e| err_text(&e))?;
+            let status = resp.status();
+            let text = resp.text().await.map_err(|e| err_text(&e))?;
+            if status.as_u16() == 401 || status.as_u16() == 403 {
+                return Err("401".to_string());
+            }
+            if !status.is_success() {
+                return Err(format!("HTTP {status}: {}", &text[..text.len().min(160)]));
+            }
+            if text.trim().is_empty() {
+                return Ok(Value::Null);
+            }
+            serde_json::from_str::<Value>(&text)
+                .map_err(|e| format!("{e}: {}", &text[..text.len().min(160)]))
+        }
+    })
+    .await
+}
+
 /// 拉原始字节（图片 / m3u8 / 分片）。
 pub async fn fetch_bytes(url: &str) -> Result<(Option<String>, Vec<u8>), String> {
     let url = url.to_string();
