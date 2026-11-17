@@ -34,6 +34,9 @@
 }
 .plat-windows { --r-sm: 4px; --r-md: 8px; --r-lg: 8px; --r-ctl: 4px; --nav-h: 0px; }
 .plat-macos { --r-sm: 6px; --r-md: 10px; --r-lg: 12px; --r-ctl: 6px; --nav-h: 0px; }
+/* iOS 与 Android 同为无壳移动端布局，圆角/导航规则跟 Android 一致 */
+.plat-android,
+.plat-ios { --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-ctl: 999px; --nav-h: 0px; }
 html.theme-light {
   color-scheme: light;
   --p-canvas: #f3f3f3;
@@ -249,7 +252,8 @@ input[type="range"].hg-range::-webkit-slider-thumb { -webkit-appearance: none; w
    原生全屏时红绿灯被系统隐藏（is-native-fs），让位收回，避免留一条空白。 */
 .plat-macos .win-titlebar { padding-left: 84px; }
 .plat-macos .win-titlebar.is-native-fs { padding-left: 14px; }
-.plat-android .win-main { background: var(--p-bg); overflow: hidden; }
+.plat-android .win-main,
+.plat-ios .win-main { background: var(--p-bg); overflow: hidden; }
 .win-page-in { animation: kf-page-in .26s cubic-bezier(.2,0,0,1) both; }
 .win-page-out { animation: kf-page-out .2s ease-in both; }
 

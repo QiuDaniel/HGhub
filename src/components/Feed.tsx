@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, cover, fmt, fmtTime, mediaUrl, platform } from "../api";
+import { api, asWkVideo, cover, fmt, fmtTime, hasElementFullscreen, mediaUrl, platform } from "../api";
 import type { Detail, Episode, Post, VideoCard } from "../types";
 import { useStore } from "../store";
 import { Avatar, Img, Sheet } from "./ui";
@@ -306,17 +306,32 @@ export default function Feed({ videoIds, startIndex = 0, title = "", mode, kind 
     return () => setBackHandler(null);
   }, [panel]);
 
+  /* 全屏状态同步：标准 fullscreenchange（桌面 / iPad）+ webkitbegin/endfullscreen
+     （iPhone 原生视频全屏，fullscreenchange 不会触发）。 */
   useEffect(() => {
     const onFs = () => setFullscreen(!!document.fullscreenElement);
+    const onWk = () => setFullscreen(!!asWkVideo(videoRef.current?.el())?.webkitDisplayingFullscreen);
+    const video = asWkVideo(videoRef.current?.el());
     document.addEventListener("fullscreenchange", onFs);
-    return () => document.removeEventListener("fullscreenchange", onFs);
-  }, []);
+    video?.addEventListener("webkitbeginfullscreen", onWk);
+    video?.addEventListener("webkitendfullscreen", onWk);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFs);
+      video?.removeEventListener("webkitbeginfullscreen", onWk);
+      video?.removeEventListener("webkitendfullscreen", onWk);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playKey]);
 
   const toggleFull = () => {
+    const video = asWkVideo(videoRef.current?.el());
+    if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); return; }
+    if (video?.webkitDisplayingFullscreen) { video.webkitExitFullscreen?.(); return; }
     const el = boxRef.current?.parentElement;
-    if (!el) return;
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    else el.requestFullscreen().catch(() => {});
+    /* 桌面 / iPad：容器元素全屏。iPhone 的 WKWebView 没有该 API
+       （hasElementFullscreen 为 false），退回 <video> 原生播放器全屏。 */
+    if (hasElementFullscreen && el) { el.requestFullscreen().catch(() => {}); return; }
+    video?.webkitEnterFullscreen?.();
   };
 
   /* —— 长按 2x（上滑锁定） / 横拖定位 / 单击暂停 —— */

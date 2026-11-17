@@ -11,16 +11,46 @@ export const APP_VERSION = __APP_VERSION__;
 const ua = navigator.userAgent;
 export const isAndroid = /Android/i.test(ua);
 export const isMacos = /Macintosh|Mac OS X/i.test(ua);
-export const platform: "android" | "windows" | "macos" = isAndroid ? "android" : isMacos ? "macos" : "windows";
+/** iPadOS 13+ 桌面级 UA 也是 Macintosh，靠触摸点数区分（触屏 Mac 不存在）。
+ *  必须在 isMacos 判断前用，否则 iPad 会被当成 macOS 桌面壳。 */
+export const isIOS = /iPad|iPhone|iPod/i.test(ua) || (isMacos && navigator.maxTouchPoints > 1);
+export const platform: "android" | "ios" | "windows" | "macos" = isAndroid
+  ? "android"
+  : isIOS
+    ? "ios"
+    : isMacos
+      ? "macos"
+      : "windows";
 
 /** 自定义协议地址随平台不同（见 tauri `register_asynchronous_uri_scheme_protocol` 文档）：
  *  Windows / Android → `http://<scheme>.localhost`
  *  macOS / iOS / Linux → `<scheme>://localhost`
  *  Rust 侧 `src-tauri/src/lib.rs` 里改写 m3u8 用的 scheme 必须与此一致。 */
-export const LOCAL = isMacos ? "hg://localhost" : "http://hg.localhost";
+export const LOCAL = isMacos || isIOS ? "hg://localhost" : "http://hg.localhost";
 
 /** src 是否已是本地协议地址（避免在详情页把代理地址再包一层） */
 export const isLocalMedia = (src: string) => src.startsWith(`${LOCAL}/`);
+
+/* —— iOS 真机适配（全屏与 HLS 走原生路径）—— */
+
+/** 元素级全屏 API（requestFullscreen）：桌面 / iPad 有；iPhone 的 WKWebView 没有，
+ *  只能用 <video> 的 webkit 私有 API。按能力探测而非按平台，iPad UA 变化也不怕。 */
+export const hasElementFullscreen = typeof document.documentElement.requestFullscreen === "function";
+
+/** iOS 上不走 hls.js，把 Rust 改写后的 m3u8 直接交给 WKWebView 原生播放（AVPlayer）。
+ *  原因：iPhone 低版本（<17.1）无 MSE，hls.js 根本装不上；iOS 17.1+ 的
+ *  ManagedMediaSource 与自定义协议（WKURLSchemeHandler）组合坑多，而 AVPlayer 走
+ *  同一个协议 handler 是稳定路径。m3u8 分片/key 改写在 Rust 侧完成，原生播放同样受益。 */
+export const preferNativeHls = isIOS;
+
+/** <video> 的 webkit 私有全屏 API（仅 iOS WebView 存在，标准 TS 类型里没有） */
+export type WkVideo = HTMLVideoElement & {
+  webkitEnterFullscreen?: () => void;
+  webkitExitFullscreen?: () => void;
+  webkitDisplayingFullscreen?: boolean;
+};
+export const asWkVideo = (v: HTMLVideoElement | null | undefined): WkVideo | null =>
+  (v as WkVideo | null) ?? null;
 
 /** 封面：经本地协议解密（站点封面是 AES 密文）。 */
 export const cover = (url?: string, _w = 480) =>

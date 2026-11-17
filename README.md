@@ -4,7 +4,7 @@
 
 **黄果短剧第三方客户端 · Rust + Tauri 2**
 
-Windows / macOS / Android 三端 · Fluent 设计 · 沉浸式竖屏播放
+Windows / macOS / Android / iOS 四端 · Fluent 设计 · 沉浸式竖屏播放
 
 </div>
 
@@ -87,6 +87,20 @@ pnpm android:dev      # 真机 / 模拟器调试
 pnpm android:build    # 产出 APK
 ```
 
+iOS（需 macOS + Xcode + 完整 iOS toolchain，配置 `ANDROID_HOME` / `NDK_HOME` 后
+`tauri ios` 依赖的 Rust target 会在首次构建时自动安装）：
+
+```bash
+pnpm ios:init         # 首次生成 ios 工程
+pnpm ios:dev          # 真机 / 模拟器调试
+pnpm ios:build        # 产出 .app；加 --export-method 等参数出 ipa
+```
+
+iOS 工程说明：窗口配置在 `src-tauri/tauri.ios.conf.json`；能力权限按平台拆分
+（`capabilities/default.json` 只作用于桌面，`capabilities/mobile.json` 作用于
+Android / iOS）；`src-tauri/gen/` 不入库，重新 init 后由 `sync-ios-icons.mjs`
+把 `src-tauri/icons/ios/` 的图标同步进 Assets.xcassets（iOS 构建时自动执行）。
+
 ### 环境注意
 
 - 工程若放在 **exFAT** 盘（不支持符号链接），需保留 `.npmrc` 中的 `node-linker=hoisted`。
@@ -98,7 +112,7 @@ pnpm android:build    # 产出 APK
 1. **统一边缘信封**：站点把 `/api/**` 收敛为 `POST /api/edge/request`（`method/path/body(base64)/content_type` + `Authorization: Bearer`），本项目只对接这一个入口，无需处理 Cookie。
 2. **封面解密**：封面为 AES-128-CBC 密文，Rust 侧解密后经自定义协议输出，前端 `<img>` 直接使用。
 3. **HLS 代理**：m3u8 与分片经自定义协议转发并改写 `#EXT-X-KEY` / 分片地址，绕开 WebView 的 CORS 与防盗链。
-4. **自定义协议**：Windows / Android 为 `http://hg.localhost/*`，macOS 为 `hg://localhost/*`（Tauri 的平台差异）。
+4. **自定义协议**：Windows / Android 为 `http://hg.localhost/*`，macOS / iOS 为 `hg://localhost/*`（Tauri 的平台差异）。
    Rust 侧 `lib.rs` 与前端 `api.ts` 各自按平台生成一次基址，两处必须一致，否则封面与视频全部加载失败。
 5. **不做签名逆向**：只复用浏览器同源行为，接口字段均有文档与实测样本。
 
@@ -144,6 +158,12 @@ cd src-tauri/gen/android
 **3. Android 构建提示找不到 SDK / NDK**
 
 需要设置 `ANDROID_HOME`（Android SDK 根目录）、`NDK_HOME`（`$ANDROID_HOME/ndk/<版本>`）与 `JAVA_HOME`（JDK 17）。
+
+**4. `pnpm ios:dev` 报签名错误 / 无法安装到真机**
+
+在 Xcode 里打开 `src-tauri/gen/ios/App/App.xcodeproj`，Signing & Capabilities 选一个
+Team（登录个人免费 Apple ID 即可真机自签调试，首次需在 iPhone 上信任开发者证书）；
+正式分发（TestFlight / App Store）需要付费开发者账号。
 
 ## LinuxDO
 https://linux.do/

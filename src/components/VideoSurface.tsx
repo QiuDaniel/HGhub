@@ -1,6 +1,6 @@
 import { useEffect, useImperativeHandle, useRef, forwardRef, useState } from "react";
 import Hls from "hls.js";
-import { isLocalMedia, playlist } from "../api";
+import { isLocalMedia, playlist, preferNativeHls } from "../api";
 
 export type VideoHandle = {
   el: () => HTMLVideoElement | null;
@@ -43,6 +43,9 @@ const VideoSurface = forwardRef<VideoHandle, Props>(function VideoSurface(
 ) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  /** 本次 src 是否走原生 <video> 播放（非 hls.js）：video 的 error 事件只在原生路径上报，
+   *  hls.js 接管时解码错误由它的 MEDIA_ERROR 处理，避免重复报。 */
+  const nativeRef = useRef(false);
   const [ready, setReady] = useState(false);
 
   useImperativeHandle(ref, () => ({
@@ -68,7 +71,7 @@ const VideoSurface = forwardRef<VideoHandle, Props>(function VideoSurface(
 
     const proxied = isLocalMedia(src);
     const url = proxied ? src : playlist(src);
-    const useHls = !url.includes("/seg?u=");
+    const useHls = !url.includes("/seg?u=") && !preferNativeHls;
 
     /* 换源时先把音量/倍速套回去：hls 重新 attach 后浏览器会把它们重置成默认值 */
     const applySettings = () => {
@@ -81,6 +84,7 @@ const VideoSurface = forwardRef<VideoHandle, Props>(function VideoSurface(
     applySettings();
 
     if (useHls && Hls.isSupported()) {
+      nativeRef.current = false;
       const hls = new Hls({
         enableWorker: true,
         maxBufferLength: 30,
@@ -103,6 +107,8 @@ const VideoSurface = forwardRef<VideoHandle, Props>(function VideoSurface(
         else { hls.destroy(); hlsRef.current = null; }
       });
     } else {
+      /* 原生 HLS：iOS（AVPlayer）/ 老 WebView，直接播 Rust 改写后的 m3u8 */
+      nativeRef.current = true;
       video.src = url;
       if (autoPlay) video.play().catch(() => {});
     }
@@ -145,6 +151,11 @@ const VideoSurface = forwardRef<VideoHandle, Props>(function VideoSurface(
       onWaiting={() => onWaiting?.()}
       onPlaying={() => onPlaying?.()}
       onEnded={() => onEnded?.()}
+      onError={() => {
+        if (!nativeRef.current) return;
+        const code = videoRef.current?.error?.code;
+        onError?.(`video/${code ?? "?"}`);
+      }}
     />
   );
 });

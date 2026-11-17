@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
-import { fmtTime, playlist } from "../api";
+import { asWkVideo, fmtTime, hasElementFullscreen, playlist, preferNativeHls } from "../api";
 import { ICompress, IExpand, IPauseF, IPlayF, IVol, IVolMute } from "../icons";
 
 type Props = {
@@ -24,6 +24,8 @@ export default function Player({
   const videoRef = useRef<HTMLVideoElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  /** 本次 src 是否走原生 <video> 播放（见 preferNativeHls）：error 事件只在原生路径上报 */
+  const nativeRef = useRef(false);
   const [playing, setPlaying] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [time, setTime] = useState(0);
@@ -39,7 +41,8 @@ export default function Player({
 
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
 
-    if (Hls.isSupported()) {
+    if (!preferNativeHls && Hls.isSupported()) {
+      nativeRef.current = false;
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: false,
@@ -65,7 +68,8 @@ export default function Player({
         else { hls.destroy(); hlsRef.current = null; }
       });
     } else {
-      // Safari / 部分 WebView 原生支持 HLS
+      // 原生 HLS：iOS（AVPlayer）/ Safari / 部分 WebView，直接播 Rust 改写后的 m3u8
+      nativeRef.current = true;
       video.src = url;
       if (autoPlay) video.play().catch(() => setPlaying(false));
     }
@@ -81,10 +85,20 @@ export default function Player({
     video.muted = muted;
   }, [muted]);
 
+  /* 全屏状态同步：标准 fullscreenchange（桌面 / iPad）+ webkitbegin/endfullscreen
+     （iPhone 原生视频全屏，fullscreenchange 不会触发）。 */
   useEffect(() => {
     const onFs = () => setFull(!!document.fullscreenElement);
+    const onWk = () => setFull(!!asWkVideo(videoRef.current)?.webkitDisplayingFullscreen);
+    const video = asWkVideo(videoRef.current);
     document.addEventListener("fullscreenchange", onFs);
-    return () => document.removeEventListener("fullscreenchange", onFs);
+    video?.addEventListener("webkitbeginfullscreen", onWk);
+    video?.addEventListener("webkitendfullscreen", onWk);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFs);
+      video?.removeEventListener("webkitbeginfullscreen", onWk);
+      video?.removeEventListener("webkitendfullscreen", onWk);
+    };
   }, []);
 
   const toggle = () => {
@@ -111,10 +125,14 @@ export default function Player({
   };
 
   const toggleFull = () => {
+    const video = asWkVideo(videoRef.current);
+    if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); return; }
+    if (video?.webkitDisplayingFullscreen) { video.webkitExitFullscreen?.(); return; }
     const el = wrapRef.current;
-    if (!el) return;
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    else el.requestFullscreen().catch(() => {});
+    /* 桌面 / iPad：容器元素全屏。iPhone 的 WKWebView 没有该 API
+       （hasElementFullscreen 为 false），退回 <video> 原生播放器全屏。 */
+    if (hasElementFullscreen && el) { el.requestFullscreen().catch(() => {}); return; }
+    video?.webkitEnterFullscreen?.();
   };
 
   const pct = duration > 0 ? (time / duration) * 100 : 0;
@@ -135,6 +153,11 @@ export default function Player({
         onTimeUpdate={(e) => setTime((e.target as HTMLVideoElement).currentTime)}
         onLoadedMetadata={(e) => setDuration((e.target as HTMLVideoElement).duration || 0)}
         onEnded={() => onEnded?.()}
+        onError={() => {
+          if (!nativeRef.current) return;
+          const code = videoRef.current?.error?.code;
+          setErrMsg(`video/${code ?? "?"}`);
+        }}
       />
 
       {errMsg && (

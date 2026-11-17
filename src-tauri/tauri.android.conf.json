@@ -1,0 +1,6 @@
+{
+  "$schema": "./gen/schemas/android-schema.json",
+  "build": {
+    "beforeBuildCommand": "pnpm build && node scripts/sync-android-icons.mjs"
+  }
+}

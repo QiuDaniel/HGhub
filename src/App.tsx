@@ -80,10 +80,14 @@ function StackPage({ page, onBack, wide, top, bottomInset }: {
 }
 
 /* ============ 应用主体 ============ */
+/** 手机端（Android / iOS）共用无壳布局：底栏 + 安全区；桌面端走 DesktopShell。 */
+export const isMobilePlatform = (p: string) => p === "android" || p === "ios";
+
 function AppBody() {
   const { platform, tab, setTab, stack, pop, loginOpen, setLoginOpen, fs } = useStore();
   const mainRef = useRef<HTMLDivElement>(null);
-  const [wide, setWide] = useState(platform !== "android");
+  const mobile = isMobilePlatform(platform);
+  const [wide, setWide] = useState(!mobile);
   const [collapsed, setCollapsed] = useState(false);
 
   useLayoutEffect(() => {
@@ -116,15 +120,15 @@ function AppBody() {
 
   const vis = (k: Tab) => (tab === k ? "absolute inset-0" : "absolute inset-0 invisible pointer-events-none");
   const pageActive = stack.length === 0 && !loginOpen;
-  const bottomInset = platform === "android" ? (fs ? 0 : 40) : 14;
+  const bottomInset = mobile ? (fs ? 0 : 40) : 14;
   /* 栈页（从搜索/分类/我的进入的播放页、图文页）没有底栏，
      底部只让出安全区。之前多留了 20px，视频底边会露出一条
      「底栏」似的窄缝（底部的压暗渐变到不了屏幕最底）。 */
-  const stackInset = platform === "android" ? 0 : 14;
+  const stackInset = mobile ? 0 : 14;
 
   return (
     <div className={`absolute inset-0 flex bg-canvas plat-${platform}`}>
-      {platform !== "android" && <DesktopRail collapsed={collapsed} />}
+      {!mobile && <DesktopRail collapsed={collapsed} />}
       <div ref={mainRef} className="relative flex-1 min-w-0 overflow-hidden win-main">
         <div className={vis("home")}><Home active={pageActive && tab === "home"} bottomInset={bottomInset} /></div>
         <div className={vis("search")}><Search active={pageActive && tab === "search"} wide={wide} /></div>
@@ -137,7 +141,7 @@ function AppBody() {
           </div>
         ))}
 
-        {platform === "android" && !fs && stack.length === 0 && <TabBar />}
+        {mobile && !fs && stack.length === 0 && <TabBar />}
       </div>
     </div>
   );
@@ -212,10 +216,11 @@ function ShellInner({ collapsed, theater }: { collapsed: boolean; theater: boole
   );
 }
 
-/* ============ 移动端（无壳） ============ */
+/* ============ 移动端（无壳，Android / iOS 共用） ============ */
 function MobileShell() {
+  const { platform } = useStore();
   return (
-    <div className="absolute inset-0 flex flex-col bg-canvas plat-android"
+    <div className={`absolute inset-0 flex flex-col bg-canvas plat-${platform}`}
       style={{ "--sat": "max(env(safe-area-inset-top), 8px)", "--sab": "max(env(safe-area-inset-bottom), 6px)" } as React.CSSProperties}>
       <div className="relative flex-1 min-h-0">
         <AppBody />
@@ -227,6 +232,7 @@ function MobileShell() {
 /* ============ 入口 ============ */
 export default function App() {
   const { platform, loginOpen, setLoginOpen, tab, setTab, stack, pop, fs, setFs } = useStore();
+  const mobile = isMobilePlatform(platform);
 
   /* —— 安卓硬件返回键 ——
      层级：全屏 → 面板/弹层 → 登录框 → 页面栈 → 回首页 → 退出应用。
@@ -271,7 +277,7 @@ export default function App() {
 
   return (
     <>
-      {platform === "android" ? <MobileShell /> : <DesktopShell />}
+      {mobile ? <MobileShell /> : <DesktopShell />}
       <LoginModal />
       <ToastHost />
       {/* 登录遮罩键盘处理占位 */}

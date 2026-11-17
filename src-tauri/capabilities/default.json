@@ -1,7 +1,8 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "HGhub 默认能力",
+  "description": "HGhub 默认能力（桌面端）",
+  "platforms": ["windows", "macOS", "linux"],
   "windows": ["main"],
   "permissions": [
     "core:default",

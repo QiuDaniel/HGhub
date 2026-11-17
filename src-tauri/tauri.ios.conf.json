@@ -1,0 +1,22 @@
+{
+  "$schema": "./gen/schemas/ios-schema.json",
+  "build": {
+    "beforeBuildCommand": "pnpm build && node scripts/sync-ios-icons.mjs"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "HGhub",
+        "width": 390,
+        "height": 844,
+        "resizable": true
+      }
+    ]
+  },
+  "bundle": {
+    "ios": {
+      "minimumSystemVersion": "13.0"
+    }
+  }
+}
