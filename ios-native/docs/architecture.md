@@ -250,6 +250,15 @@ M2 初版实现：横向 `|vx| > 1.15|vy|`、左右边缘各 20% 才进入亮度
 - `FeedContext` 增加 `source/query/cate`；`FeedViewModel` 按来源继续请求 search/category 下一页，避免从搜索/频道进入 Feed 后错拉首页。
 - 列表入口统一调 `AppState.presentFeed(...)`，统一带续播历史。
 
+### 7.8 我的 / 设置 / 线路（M5）
+
+- `LibraryViewModel`：用 `VideoDetail` 回填收藏与最近 30 条历史；点击统一 `AppState.presentFeed`，按历史集/秒续播。
+- 设置：`MaintenanceService` 提供清缓存（Nuke + `URLCache`）、诊断、更新检查；`LiveMaintenanceService` 走系统代理。
+- 诊断：`getaddrinfo` 解析 DNS，`CFNetworkCopySystemProxySettings` 读 HTTP 代理，`URLSession` 请求当前 base。
+- 线路：`LineService` 拉 `huangguoai.pages.dev` → `publish.js`，解析 `var urls` × `var subdomains`；探测 6 并发、8s 超时；切换同时更新 `LineStore` 持久化与 `APIClient` base。
+- 更新：GitHub Release 数字段比较，只展示不自动安装；404 视为无 Release。
+- 缓存清理不清登录/收藏/历史。
+
 ## 8. 网络层
 
 ### 8.1 APIClient

@@ -1,6 +1,6 @@
 # 接口契约 · ios-native
 
-> 版本：v0.3（M4 基线）
+> 版本：v0.4（M5 基线）
 > 更新：2026-11-18
 > 来源：以现有 Rust 实现 [net.rs](../src-tauri/src/net.rs)、[api.rs](../src-tauri/src/api.rs)、[media.rs](../src-tauri/src/media.rs)、[lines.rs](../src-tauri/src/lines.rs) 与 [AIRead.md](../AIRead.md) 为准。
 > 目的：Swift 端按这份契约重写；**契约变了先改这里，再改代码**。

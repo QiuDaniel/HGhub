@@ -11,6 +11,8 @@ final class AppDependencies {
     let session: SessionStore
     let library: LocalLibrary
     let lines: LineStore
+    let lineService: LineService
+    let maintenance: MaintenanceService
 
     init() {
         AppImagePipeline.install()
@@ -23,7 +25,10 @@ final class AppDependencies {
         self.discovery = LiveVideoDiscoveryRepository(api: api)
         self.session = SessionStore()
         self.library = LocalLibrary()
-        self.lines = LineStore()
+        let lines = LineStore()
+        self.lines = lines
+        self.lineService = LineService(lines: lines, api: api)
+        self.maintenance = LiveMaintenanceService(api: api)
     }
 
     /// 启动时把持久化的线路 / 会话注入 APIClient，并恢复 AppState 的登录态。

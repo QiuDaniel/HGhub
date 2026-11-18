@@ -121,4 +121,19 @@ struct VideoDetail: Decodable, Sendable, Hashable, Identifiable {
         }
         return (1...episodeTotal).map { Episode(epNum: $0, title: "第\($0)集") }
     }
+
+    /// 收藏/历史列表只需要卡片字段，把详情压回 VideoCard。
+    var card: VideoCard {
+        VideoCard(
+            id: id,
+            title: title,
+            cover: cover,
+            episodeCount: episodeTotal,
+            score: score,
+            likeCount: counts?.like,
+            author: author.map {
+                Author(id: $0.id, name: $0.name, avatar: $0.avatar, followers: $0.followers)
+            }
+        )
+    }
 }

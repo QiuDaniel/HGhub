@@ -221,6 +221,21 @@ final class M0SmokeUITests: XCTestCase {
         XCTAssertTrue(success.waitForExistence(timeout: 30), "Playback 应通过系统代理返回播放地址")
     }
 
+    func testProfileHistoryResume() {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.tabBars.buttons["我的"].tap()
+        XCTAssertTrue(app.navigationBars["我的"].waitForExistence(timeout: 10))
+
+        let row = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'historyRow_'")
+        ).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 30), "我的页应展示观看历史")
+        row.tap()
+        XCTAssertTrue(app.buttons["feedClose"].waitForExistence(timeout: 10), "历史条目应进入续播")
+    }
+
     func testProfileSettingsAndLinePicker() {
         let app = XCUIApplication()
         app.launch()
@@ -256,6 +271,40 @@ final class M0SmokeUITests: XCTestCase {
         XCTAssertTrue(app.textFields["loginUsername"].exists)
         XCTAssertTrue(app.secureTextFields["loginPassword"].exists)
         XCTAssertFalse(app.buttons["loginSubmit"].isEnabled, "空表单登录按钮应禁用")
+        XCTAssertTrue(app.buttons["关闭"].exists)
+    }
+
+    func testLinePickerLoadsMirrors() {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.tabBars.buttons["我的"].tap()
+        app.buttons.matching(NSPredicate(format: "label CONTAINS '设置'")).firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["设置"].waitForExistence(timeout: 10))
+        app.buttons["settingsLines"].tap()
+        XCTAssertTrue(app.navigationBars["线路"].waitForExistence(timeout: 10))
+
+        Thread.sleep(forTimeInterval: 10)
+        let probes = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'probe_https://'")
+        )
+        XCTAssertGreaterThan(probes.count, 2, "线路页应加载固定线路和镜像线路")
+    }
+
+    func testSettingsNetworkDiagnostics() {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.tabBars.buttons["我的"].tap()
+        app.buttons.matching(NSPredicate(format: "label CONTAINS '设置'")).firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["设置"].waitForExistence(timeout: 10))
+
+        app.buttons["settingsDiagnostics"].tap()
+        XCTAssertTrue(app.navigationBars["网络诊断"].waitForExistence(timeout: 20))
+        let base = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS 'base:'")
+        ).firstMatch
+        XCTAssertTrue(base.waitForExistence(timeout: 10), "诊断应展示 base 快照")
         XCTAssertTrue(app.buttons["关闭"].exists)
     }
 
