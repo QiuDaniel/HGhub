@@ -34,6 +34,11 @@ struct Paged<Item: Decodable & Sendable>: Decodable, Sendable {
     let items: [Item]
     let pagination: Pagination
 
+    init(items: [Item], pagination: Pagination) {
+        self.items = items
+        self.pagination = pagination
+    }
+
     enum CodingKeys: String, CodingKey {
         case items
         case pagination

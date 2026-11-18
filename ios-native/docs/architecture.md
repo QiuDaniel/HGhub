@@ -204,7 +204,7 @@ enum Route: Hashable {
 ### 7.2 单播放器策略
 
 - **整个 Feed 只创建一个 `AVPlayer`**；翻页时 `replaceCurrentItem`，不创建多个播放器。
-- pager 的非当前 cell 只显示封面与标题；当前 cell 上叠一个 `PlayerSurface`。
+- pager 的非当前 cell 只显示封面；当前条目的视频用固定的 `PlayerSurface` 叠在 pager 上方，`isUserInteractionEnabled=false`，切条时先隐藏，`readyToPlay` 后显示。
 - 预加载只做下一条：`AVURLAsset.load(.isPlayable)`，最多 2 个 asset。
 - 每个 `(videoID, ep)` 的播放进度存 `FeedViewModel` 字典；切回时 seek 恢复。
 
@@ -230,7 +230,7 @@ enum Route: Hashable {
 3. 其余纵向滑动 → pager 翻页。
 4. 单击暂停；双击点赞；长按 2x（松手恢复）。
 
-具体阈值在 M2 用真机调；文档先记录规则，避免实现时随手改。
+M2 初版实现：横向 `|vx| > 1.15|vy|`、左右边缘各 20% 才进入亮度/音量、长按 0.4s；专用 `UIPanGestureRecognizer` 通过 `collectionView.panGestureRecognizer.require(toFail:)` 先决定方向，中心纵向失败后交给 pager。阈值仍需真机继续调，后续修改同步到本节。
 
 ## 8. 网络层
 

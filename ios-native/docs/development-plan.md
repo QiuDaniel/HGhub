@@ -1,7 +1,7 @@
 # 开发计划 · ios-native
 
-> 版本：v0.1（M0 执行中）
-> 更新：2026-11-17
+> 版本：v0.2（M2 完成）
+> 更新：2026-11-18
 > 关联：[需求](requirements.md) · [架构](architecture.md) · [接口契约](api-contract.md) · [ADR](decisions.md)
 
 ---
@@ -19,9 +19,9 @@
 
 | 阶段 | 目标 | 交付物 | 预估 | 状态 |
 |---|---|---|---|---|
-| **M0** | 工程骨架 + 契约验证 | 可编译 App、XcodeGen、APIClient、模型、自检页、fixtures 计划 | 2–3 人日 | **进行中** |
+| **M0** | 工程骨架 + 契约验证 | 可编译 App、XcodeGen、APIClient、模型、自检页、fixtures 计划 | 2–3 人日 | ✅ 完成 |
 | **M1** | 应用外壳 + 基础设施 | 设计 token、Tab、导航、Session、LocalLibrary、LineStore、错误/toast | 3–4 人日 | ✅ 完成 |
-| **M2** | 首页 + 播放器 | 竖滑 Feed、单 AVPlayer、封面、续播、手势、选集/评论入口 | 6–8 人日 | 待开始 |
+| **M2** | 首页 + 播放器 | 竖滑 Feed、单 AVPlayer、封面、续播、手势、选集/评论入口 | 6–8 人日 | ✅ 完成 |
 | **M3** | 详情 + 互动 | 详情、选集、评论、点赞/收藏/关注、登录拦截 | 5–7 人日 | 待开始 |
 | **M4** | 搜索 + 分类 + 榜单 | 搜索历史、频道、三榜单 | 3–4 人日 | 待开始 |
 | **M5** | 我的 + 设置 + 线路 | 资料卡、收藏/历史、设置、线路选择/探测、缓存/更新 | 4–5 人日 | 待开始 |
@@ -83,7 +83,7 @@
 - 主题：`AppState.theme` 写入 Defaults，切换即时生效。
 - 测试：**15 个单测 / 6 suites + 5 个 UI 测试**，`TEST SUCCEEDED`。
 
-## 5. M2：首页 + 播放器
+## 5. M2：首页 + 播放器（完成）
 
 | ID | 任务 | 验收 |
 |---|---|---|
@@ -97,6 +97,21 @@
 | M2-08 | 续播 | 历史进入按集/秒恢复 |
 
 **M2 完成定义**：连续刷 30 条不崩；切条 ≤500ms 出画面；音频不重叠；播放错误有文案。
+
+**M2 验证记录（2026-11-18）**：
+
+- `xcodegen generate` + `xcodebuild build`（generic iOS Simulator）：`BUILD SUCCEEDED`。
+- `xcodebuild test`（iPhone 17 Pro / iOS 26.2）：**21 个单测 / 8 suites + 11 个 UI 测试**，`TEST SUCCEEDED`。
+- 首页：两列封面流、首屏 10 条、滚动近底部自动翻页、去重、错误重试、下拉刷新；30 条跨三页去重由单测覆盖。
+- Feed：`UICollectionView` 竖滑分页；`willDisplay`/滚动到倒数第 3 条触发 `loadMore`；当前条切条后封面先出，视频 ready 后显示。
+- 预加载：切到当前条时预取下一条的 `PlayInfo` + `AVURLAsset(.isPlayable)`，不创建第二个 `AVPlayer`；同一 `(id, ep)` 命中小缓存。
+- 播放：整个 Feed 单 `AVPlayer`；播放接口直连失败时按契约回退老 `play` 接口；`PlayerState` 暴露 loading/playing/paused/failed、时间/时长/缓冲/错误。
+- 控件：单击暂停/继续、双击喜欢、长按 2x、横滑进度、左右边缘上下滑亮度/音量、进度条拖动、倍速、静音、全屏（嵌套 cover 复用同一个 AVPlayer）。
+- 选集/评论：`EpisodesSheet` 切集生效；`CommentsSheet` 打开/关闭，评论列表留 M3。
+- 续播：关闭 Feed 时写 `LocalLibrary` 历史；重新进入按历史集/秒 seek；UI 测试验证重进进度不为 `00:00`。
+- 封面：Nuke pipeline + AES 解码在首页和 Feed 封面生效；真实封面已通过系统代理加载。
+- 真机/模拟器实测：系统代理 `127.0.0.1:7890` 下 Feed 200、HLS playback 200、画面起播、时间推进。
+- 验收边界：30 条目前是分页单测覆盖，尚未做 30 条真机连续滑动；切条 ≤500ms 未插桩计时；边缘亮度/音量、横滑进度未做 UI 自动化，阈值按架构 7.5 留待真机调。
 
 ## 6. M3：详情 + 互动
 
@@ -201,15 +216,16 @@ xcodebuild -project HGHub.xcodeproj -scheme HGHub \
 | 2026-11-17 | 规划 | 确定路线 A、iOS 17、并行目录、依赖清单、架构 |
 | 2026-11-17 | M0 | 六份文档完成；XcodeGen/SPM 解析通过；APIClient + 模型 + 封面解码器落地；7 个单测 + 3 个 UI 测试通过；Feed/Playback/封面真实联调通过（系统代理） |
 | 2026-11-17 | M1 | DesignSystem、导航/设置/我的/登录壳、Session 启动恢复、LocalLibrary、LineStore、主题持久化；15 个单测 + 5 个 UI 测试通过 |
+| 2026-11-18 | M2 | 首页分页、UICollectionView FeedPager、单 AVPlayer/HLS、续播、选集/评论/全屏、封面；21 个单测 + 11 个 UI 测试通过 |
 
 ## 15. 下一步
 
-**当前指针：M2-01 首页分页 / M2-02 FeedPager。**
+**当前指针：M3-01 详情模型 / M3-02 互动。**
 
 具体动作：
-1. `HomeViewModel` 接 `VideoRepository.feed`，完成首屏 / 加载更多 / 去重 / 错误重试。
-2. `FeedPager`（UICollectionView）搭竖滑分页，先接封面与标题。
-3. `PlayerCoordinator` + `PlayerSurface` 接 AVPlayer，完成单播放器与切条续播。
-4. 手势仲裁与选集/评论入口放在 M2 后半段，按架构 7.5 的规则实现。
+1. 加 `Detail` 模型与详情面板，接 `/api/videos/{id}`，展示标题/简介/标签/集数/作者/计数。
+2. 点赞/收藏/关注做乐观更新 + 失败回滚，未登录先弹登录。
+3. 评论列表分页/去重/发送，键盘不遮挡；401 统一处理。
+4. 分享走系统面板；M2 已留下的评论/详情入口接上真实数据。
 
 > 每完成一个任务，把本表对应状态改成 ✅，并在第 14 节加一行；不要等整个 milestone 结束再补。

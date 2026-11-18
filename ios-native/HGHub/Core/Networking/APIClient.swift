@@ -51,7 +51,20 @@ actor APIClient {
     }
 
     /// 播放接口：直连、body 必须是 `{}`、响应仍是 `{status,data}`。
+    /// 非 401 的失败按契约回退到老 `GET /api/videos/{id}/play?ep=...`。
     func playback(id: Int, ep: Int) async throws -> PlayInfo {
+        do {
+            return try await directPlayback(id: id, ep: ep)
+        } catch let error as APIError {
+            if case .unauthorized = error { throw error }
+            if let legacy = try? await legacyPlayback(id: id, ep: ep) {
+                return legacy
+            }
+            throw error
+        }
+    }
+
+    private func directPlayback(id: Int, ep: Int) async throws -> PlayInfo {
         let path = "/api/videos/\(id)/episodes/\(ep)/playback"
         let data = try await send(
             path: path,
@@ -79,6 +92,26 @@ actor APIClient {
             videoURL: videoURL,
             videoURLHEVC: streams?.hevc,
             cdn: cdn
+        )
+    }
+
+    private func legacyPlayback(id: Int, ep: Int) async throws -> PlayInfo {
+        let response: LegacyPlayback = try await get(
+            "/api/videos/\(id)/play?ep=\(ep)&page_texts=0",
+            as: LegacyPlayback.self
+        )
+        let url = response.videoUrl?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !url.isEmpty else {
+            throw APIError.business("老播放接口没有返回地址")
+        }
+        return PlayInfo(
+            id: id,
+            epNum: ep,
+            title: "第\(ep)集",
+            duration: 0,
+            videoURL: url,
+            videoURLHEVC: response.videoUrlHevc,
+            cdn: nil
         )
     }
 
@@ -205,6 +238,11 @@ private struct EdgeResponse<T: Decodable>: Decodable {
     let status: Int?
     let msg: String?
     let data: T?
+}
+
+private struct LegacyPlayback: Decodable, Sendable {
+    let videoUrl: String?
+    let videoUrlHevc: String?
 }
 
 private struct PlaybackPayload: Decodable {

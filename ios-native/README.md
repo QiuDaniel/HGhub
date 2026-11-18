@@ -7,7 +7,7 @@ HGhub 的**纯原生 iOS 客户端**（SwiftUI + AVPlayer）。它与仓库根�
 | 目标系统 | iOS 17.0+ |
 | 语言 / 框架 | Swift 6、SwiftUI、Observation、AVFoundation、async/await |
 | 工程生成 | XcodeGen（`project.yml` 是唯一工程配置源，`.xcodeproj` 不入库） |
-| 当前阶段 | **M1 完成：设计系统 + 本地库/线路/会话 + 设置/我的/登录壳** |
+| 当前阶段 | **M2 完成：首页 + 竖滑 Feed + AVPlayer 播放器 + 续播** |
 | 使用性质 | 个人学习 / 自用，不商用、不上架（见根目录 LICENSE） |
 
 ## 文档索引
@@ -49,6 +49,8 @@ xcodebuild -project HGHub.xcodeproj -scheme HGHub \
 **M0 已验证**：XcodeGen 生成工程、10 个 SPM 依赖解析（Nuke / SwiftSoup / ZMarkupParser / ZNSTextAttachment / CryptoSwift / Valet / Defaults / AlertToast / Pulse / swift-syntax）、模拟器构建、**7 个单测 + 3 个 UI 测试**通过；App 启动见 4 Tab + M0 自检入口；通过 macOS 系统代理实测 Feed 200（10 条 / 179 页）、Playback 200（streams.main）、封面下载 + AES 解密得到 JPEG。启动截图见 [docs/m0-launch.png](docs/m0-launch.png)。
 
 **M1 已验证**：DesignSystem（颜色/按钮/Chip/Avatar/空态/骨架）、每 Tab `NavigationStack` + `Route`、Session 启动恢复、`LocalLibrary`（收藏/喜欢/关注/观看历史/搜索历史，80/12 上限）、`LineStore`（固定 2 条 + 持久化 + 地址校验）、设置/线路选择/我的/登录壳；**15 个单测 + 5 个 UI 测试**通过。
+
+**M2 已验证**：首页两列 Feed 分页、`UICollectionView` 竖滑分页、单 `AVPlayer` HLS 播放（系统代理实测起播）、单击/双击/长按/横滑/边缘手势、进度/倍速/静音/全屏、选集/评论入口、Nuke 封面、按历史续播；**21 个单测 + 11 个 UI 测试**通过。
 
 **网络说明**：iOS 的 `URLSession`/CFNetwork 自动读取系统代理；模拟器复用 macOS 系统代理（当前 `127.0.0.1:7890`），真机需在 Wi-Fi 设置里把 HTTP 代理指向 Mac 的局域网 IP。`curl` 不读系统代理，裸 `curl` 会误判“站点不可达”，排查时用 `curl -x http://127.0.0.1:7890 ...`。详见 [接口契约 § 代理](docs/api-contract.md#11-代理与网络排查)。
 

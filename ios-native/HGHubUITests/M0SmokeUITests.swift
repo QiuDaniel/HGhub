@@ -1,13 +1,154 @@
 import XCTest
 
 final class M0SmokeUITests: XCTestCase {
-    func testFeedLoadsThroughSystemProxy() {
+    private func openContractCheck(_ app: XCUIApplication) {
+        let more = app.buttons["更多"]
+        XCTAssertTrue(more.waitForExistence(timeout: 10), "首页应显示更多菜单")
+        more.tap()
+
+        let entry = app.buttons["M0 契约自检"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 5), "更多菜单应有 M0 自检入口")
+        entry.tap()
+    }
+
+    func testHomeFeedCardsLoad() {
         let app = XCUIApplication()
         app.launch()
 
-        let entry = app.buttons["M0 契约自检"]
-        XCTAssertTrue(entry.waitForExistence(timeout: 10), "首页应显示 M0 自检入口")
-        entry.tap()
+        let card = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'videoCard_'")
+        ).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 30), "首页应通过代理加载视频卡片")
+        XCTAssertTrue(card.isHittable, "首张卡片应可点击")
+    }
+
+    func testOpenFirstVideoShowsFeed() {
+        let app = XCUIApplication()
+        app.launch()
+
+        let card = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'videoCard_'")
+        ).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 30), "首页应有视频卡片")
+        card.tap()
+
+        XCTAssertTrue(app.buttons["feedClose"].waitForExistence(timeout: 10), "应进入全屏 Feed")
+        XCTAssertTrue(app.buttons["playerMute"].waitForExistence(timeout: 10), "播放器控件应出现")
+        XCTAssertTrue(app.buttons["playerEpisodes"].exists)
+        XCTAssertTrue(app.buttons["playerFullscreen"].exists)
+
+        // 留出 HLS 起播时间，方便失败时从测试日志/截图定位。
+        Thread.sleep(forTimeInterval: 12)
+        XCTAssertFalse(app.buttons["playerRetry"].exists, "播放不应在 12s 内进入错误态")
+    }
+
+    func testFeedSheetsAndFullscreen() {
+        let app = XCUIApplication()
+        app.launch()
+
+        let card = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'videoCard_'")
+        ).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 30))
+        card.tap()
+        XCTAssertTrue(app.buttons["feedClose"].waitForExistence(timeout: 10))
+
+        app.buttons["playerEpisodes"].tap()
+        let ep2 = app.buttons["episode_2"]
+        XCTAssertTrue(ep2.waitForExistence(timeout: 5), "选集面板应有第 2 集")
+        ep2.tap()
+
+        let badge = app.buttons["playerEpisodeBadge"]
+        XCTAssertTrue(badge.waitForExistence(timeout: 5))
+        XCTAssertTrue(badge.label.contains("2"), "切集后应显示第 2 集")
+
+        app.buttons["playerComments"].tap()
+        XCTAssertTrue(app.navigationBars["评论"].waitForExistence(timeout: 5))
+        app.buttons["关闭"].tap()
+
+        app.buttons["playerFullscreen"].tap()
+        XCTAssertTrue(app.buttons["关闭全屏"].waitForExistence(timeout: 5), "应进入全屏")
+        app.buttons["关闭全屏"].tap()
+        XCTAssertTrue(app.buttons["playerMute"].waitForExistence(timeout: 5), "退出全屏应回到 Feed")
+    }
+
+    func testFeedSwipeChangesVideo() {
+        let app = XCUIApplication()
+        app.launch()
+
+        let card = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'videoCard_'")
+        ).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 30))
+        card.tap()
+        XCTAssertTrue(app.buttons["feedClose"].waitForExistence(timeout: 10))
+
+        app.swipeUp()
+        let second = app.staticTexts["高三爱情故事"].firstMatch
+        XCTAssertTrue(second.waitForExistence(timeout: 10), "上滑后应切到第二条视频")
+        XCTAssertTrue(app.buttons["feedClose"].exists)
+        Thread.sleep(forTimeInterval: 4)
+        XCTAssertFalse(app.buttons["playerRetry"].exists, "切条后播放不应进入错误态")
+    }
+
+    func testPlayerTapPausesAndDoubleTapLikes() {
+        let app = XCUIApplication()
+        app.launch()
+
+        let card = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'videoCard_'")
+        ).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 30))
+        card.tap()
+        XCTAssertTrue(app.buttons["feedClose"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["playerMute"].waitForExistence(timeout: 10))
+        Thread.sleep(forTimeInterval: 6)
+
+        let center = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        center.tap()
+        XCTAssertTrue(app.buttons["playerToggle"].waitForExistence(timeout: 5), "单击应暂停并显示播放按钮")
+        app.buttons["playerToggle"].tap()
+        XCTAssertTrue(app.buttons["playerToggle"].waitForNonExistence(timeout: 5), "再次点击应继续播放")
+
+        let like = app.buttons["playerLike"]
+        let before = like.label
+        center.doubleTap()
+        XCTAssertTrue(like.waitForExistence(timeout: 3))
+        XCTAssertTrue(like.label != before, "双击应切换喜欢状态")
+    }
+
+    func testResumeFromHistory() {
+        let app = XCUIApplication()
+        app.launch()
+
+        let card = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'videoCard_'")
+        ).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 30))
+        card.tap()
+        XCTAssertTrue(app.buttons["feedClose"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["playerMute"].waitForExistence(timeout: 10))
+        Thread.sleep(forTimeInterval: 8)
+
+        app.buttons["feedClose"].tap()
+        XCTAssertTrue(card.waitForExistence(timeout: 10), "关闭后应回首页")
+        card.tap()
+        XCTAssertTrue(app.buttons["feedClose"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["playerMute"].waitForExistence(timeout: 10))
+        Thread.sleep(forTimeInterval: 8)
+
+        let progress = app.descendants(matching: .any)
+            .matching(identifier: "playerProgress")
+            .firstMatch
+        XCTAssertTrue(progress.waitForExistence(timeout: 5), "播放器应有进度元素")
+        let value = progress.value as? String ?? ""
+        XCTAssertFalse(value.hasPrefix("00:00"), "重进应按历史秒数恢复，实际进度：\(value)")
+    }
+
+    func testFeedLoadsThroughSystemProxy() {
+        let app = XCUIApplication()
+        app.launch()
+        openContractCheck(app)
 
         let feed = app.buttons["Feed 第 1 页"]
         XCTAssertTrue(feed.waitForExistence(timeout: 5), "自检页应有 Feed 按钮")
@@ -22,10 +163,7 @@ final class M0SmokeUITests: XCTestCase {
     func testPlaybackLoadsThroughSystemProxy() {
         let app = XCUIApplication()
         app.launch()
-
-        let entry = app.buttons["M0 契约自检"]
-        XCTAssertTrue(entry.waitForExistence(timeout: 10), "首页应显示 M0 自检入口")
-        entry.tap()
+        openContractCheck(app)
 
         let playback = app.buttons["Playback 117 / 第 3 集"]
         XCTAssertTrue(playback.waitForExistence(timeout: 5), "自检页应有 Playback 按钮")
@@ -75,10 +213,7 @@ final class M0SmokeUITests: XCTestCase {
     func testContractCheckOpens() {
         let app = XCUIApplication()
         app.launch()
-
-        let button = app.buttons["M0 契约自检"]
-        XCTAssertTrue(button.waitForExistence(timeout: 10), "首页应显示 M0 自检入口")
-        button.tap()
+        openContractCheck(app)
 
         XCTAssertTrue(
             app.navigationBars["M0 契约自检"].waitForExistence(timeout: 5),

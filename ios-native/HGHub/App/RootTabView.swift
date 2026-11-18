@@ -56,6 +56,10 @@ struct RootTabView: View {
         .sheet(isPresented: $app.loginPresented) {
             LoginSheet()
         }
+        .fullScreenCover(item: $app.feed) { context in
+            FeedScreen(context: context, deps: deps)
+                .environment(app)
+        }
     }
 
     @ViewBuilder
