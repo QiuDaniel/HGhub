@@ -1,6 +1,6 @@
 # 开发计划 · ios-native
 
-> 版本：v0.6（M6 完成）
+> 版本：v0.7（M7 代码完成，待真机验收）
 > 更新：2026-11-18
 > 关联：[需求](requirements.md) · [架构](architecture.md) · [接口契约](api-contract.md) · [ADR](decisions.md)
 
@@ -26,7 +26,7 @@
 | **M4** | 搜索 + 分类 + 榜单 | 搜索历史、频道、三榜单 | 3–4 人日 | ✅ 完成 |
 | **M5** | 我的 + 设置 + 线路 | 资料卡、收藏/历史、设置、线路选择/探测、缓存/更新 | 4–5 人日 | ✅ 完成 |
 | **M6** | 吃瓜 Posts | 列表、详情、HTML 渲染、图片、互动 | 3–4 人日 | ✅ 完成 |
-| **M7** | 打磨 + 发布 | PiP/AirPlay/后台、性能、无障碍、图标、签名/安装 | 4–6 人日 | 待开始 |
+| **M7** | 打磨 + 发布 | PiP/AirPlay/后台、性能、无障碍、图标、签名/安装 | 4–6 人日 | 🟡 代码完成，待真机/签名 |
 
 > 合计约 30–40 人日；依赖选型省掉图片/HTML/Keychain/持久化轮子后，实际约 25–35 人日。MVP = M0–M3，约 2–3 周（熟手全职）。
 
@@ -196,7 +196,7 @@
 - 入口：分类页「黄果吃瓜」→ Posts 列表 → 详情；真实详情 67 正文 5KB、评论 2 条已验证。
 - 验收边界：正文图片点击查看大图（P2）未做；帖子点赞/收藏未落本地（以服务端 interaction 为准）；帖子 `video_url` 播放未接入。
 
-## 10. M7：打磨 + 发布
+## 10. M7：打磨 + 发布（代码完成，待真机验收）
 
 | ID | 任务 | 验收 |
 |---|---|---|
@@ -206,6 +206,16 @@
 | M7-04 | 图标 / 启动屏 / 版本号 | 图标正确 |
 | M7-05 | 真机签名 + 安装 | 自用设备可安装 |
 | M7-06 | 回归清单 + 文档收尾 | 全部 ✅ |
+
+**M7 实施记录（2026-11-18）**：
+
+- **M7-01 系统播放**：`AVPictureInPictureController`（PiP 按钮，按设备能力显示）、`AVRoutePickerView`（AirPlay）、`MPRemoteCommandCenter`（播放/暂停/拖动/±10s）、`MPNowPlayingInfoCenter`（标题/副标题/进度/速率）、`AVAudioSession.playback`；`Info.plist` 声明 `UIBackgroundModes = [audio]`。播放器默认静音，顶部静音按钮切换并经 Defaults 记忆。
+- **M7-02 性能**：保持单 `AVPlayer`；Feed 封面通过 Nuke `ImageProcessors.Resize(width: 720)` 降采样；列表使用 `LazyVStack`/`LazyVGrid`。真机 Instruments 的启动/滚动/内存数据仍待采集。
+- **M7-03 无障碍**：主要按钮有 accessibilityLabel/Identifier；文本使用语义字体/动态字号可缩放；历史行合并朗读；VoiceOver 抽查待真机。
+- **M7-04 图标/启动/版本**：`HGHub/Info.plist` 显式管理；`CFBundleShortVersionString = $(MARKETING_VERSION)`（0.1.0）、`CFBundleVersion = $(CURRENT_PROJECT_VERSION)`；1024 AppIcon + 生成式 Launch Screen；构建后 plist 已核对。
+- **M7-05 签名/安装**：新增 [install.md](install.md)，覆盖 Team、Bundle ID、免费签名 7 天、真机代理、PiP/后台注意项；实际签名安装必须由用户 Apple ID 完成。
+- **M7-06 回归/文档**：44 单测、23 UI 测试全量通过；新增 [install.md](install.md) 与 [regression.md](regression.md)，README/架构/计划同步。
+- **待真机验收**：PiP/AirPlay/锁屏/后台音频、性能 NFR、VoiceOver、签名安装。代码侧未签名设备无法替代这些验收。
 
 ## 11. 依赖关系与关键路径
 
@@ -266,15 +276,16 @@ xcodebuild -project HGHub.xcodeproj -scheme HGHub \
 | 2026-11-18 | M4 | 搜索/历史、分类频道（空频道隐藏）、三榜单、列表→Feed 分页来源；35 个单测 + 18 个 UI 测试通过 |
 | 2026-11-18 | M5 | 资料卡/收藏/历史、设置/缓存/诊断/更新、镜像线路/探测；38 个单测 + 21 个 UI 测试通过 |
 | 2026-11-18 | M6 | 吃瓜列表、HTML 清洗/渲染、帖子详情/点赞/收藏/评论；43 个单测 + 23 个 UI 测试通过 |
+| 2026-11-18 | M7 | PiP/AirPlay/锁屏/后台音频、封面降采样、无障碍、Info.plist/图标/版本、安装文档；44 个单测 + 23 个 UI 测试通过；待真机验收 |
 
 ## 15. 下一步
 
-**当前指针：M7-01 播放器系统能力 / M7-02 打磨发布。**
+**当前指针：M7 真机验收（系统能力 / 性能 / VoiceOver / 签名）。**
 
 具体动作：
-1. 播放器补 PiP/AirPlay/后台音频/锁屏控制（按 P1 优先级）。
-2. 图片/列表性能、无障碍、字号/对比度、错误文案统一。
-3. 图标/签名/安装文档与 7 天重签说明；回归 Tauri 四端不受影响。
-4. 按 M7 任务清单做最终验收，不新增业务范围。
+1. 按 [install.md](install.md) 在自用 iPhone 上签名安装，验证 PiP、AirPlay、锁屏/控制中心、后台音频。
+2. 真机采集启动/滚动/内存数据，确认 NFR-01/NFR-02；必要时再调图片尺寸/预加载。
+3. VoiceOver 抽查主要按钮、Feed 控件、详情/评论/设置；修 label/顺序问题。
+4. 回归 Tauri 四端，确认根目录构建未被影响，归档最终验收记录。
 
 > 每完成一个任务，把本表对应状态改成 ✅，并在第 14 节加一行；不要等整个 milestone 结束再补。

@@ -120,6 +120,8 @@ struct FeedScreen: View {
                         isLiked: interactions.liked,
                         likeCount: interactions.likeCount,
                         isFullscreen: false,
+                        isPiPActive: player.isPiPActive,
+                        isPiPSupported: player.isPiPSupported,
                         scrubPreview: scrubPreview,
                         edgeHUD: edgeHUD,
                         onClose: { dismiss() },
@@ -129,6 +131,7 @@ struct FeedScreen: View {
                         onDetail: { sheet = .detail },
                         onEpisodes: { sheet = .episodes },
                         onFullscreen: { isFullscreen = true },
+                        onPiP: { player.togglePiP() },
                         onMute: { player.setMuted(!player.state.isMuted) },
                         onRate: { player.setRate($0) },
                         onSeek: { player.seek(to: $0) },
@@ -227,6 +230,7 @@ struct FeedScreen: View {
         currentEp = ep
         lastRecordedTime = time
         interactions.configure(card: card, ep: ep)
+        player.updateMetadata(title: card.displayTitle, subtitle: "第\(ep)集 · \(card.authorName)")
         player.play(videoID: card.id, ep: ep, startTime: time)
         preloadNext()
     }
@@ -241,6 +245,7 @@ struct FeedScreen: View {
         currentEp = ep
         lastRecordedTime = time
         interactions.configure(card: card, ep: ep)
+        player.updateMetadata(title: card.displayTitle, subtitle: "第\(ep)集 · \(card.authorName)")
         player.play(videoID: card.id, ep: ep, startTime: time)
         preloadNext()
     }
@@ -252,6 +257,7 @@ struct FeedScreen: View {
         currentEp = next
         lastRecordedTime = 0
         interactions.configure(card: card, ep: next)
+        player.updateMetadata(title: card.displayTitle, subtitle: "第\(next)集 · \(card.authorName)")
         player.play(videoID: card.id, ep: next, startTime: 0)
         preloadNext()
     }

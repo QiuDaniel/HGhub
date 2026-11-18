@@ -7,6 +7,8 @@ struct PlayerOverlay: View {
     let isLiked: Bool
     let likeCount: Int
     let isFullscreen: Bool
+    let isPiPActive: Bool
+    let isPiPSupported: Bool
     let scrubPreview: Double?
     let edgeHUD: String?
 
@@ -17,6 +19,7 @@ struct PlayerOverlay: View {
     var onDetail: () -> Void
     var onEpisodes: () -> Void
     var onFullscreen: () -> Void
+    var onPiP: () -> Void
     var onMute: () -> Void
     var onRate: (Float) -> Void
     var onSeek: (Double) -> Void
@@ -138,6 +141,19 @@ struct PlayerOverlay: View {
             )
             .accessibilityLabel("选集")
             .accessibilityIdentifier("playerEpisodes")
+
+            AirPlayTile()
+
+            if isPiPSupported {
+                sideButton(
+                    icon: isPiPActive ? "pip.exit" : "pip.enter",
+                    tint: .white,
+                    label: "画中画",
+                    action: onPiP
+                )
+                .accessibilityLabel(isPiPActive ? "退出画中画" : "画中画")
+                .accessibilityIdentifier("playerPiP")
+            }
 
             sideButton(
                 icon: isFullscreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right",

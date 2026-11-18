@@ -36,6 +36,11 @@ final class M0SmokeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["playerMute"].waitForExistence(timeout: 10), "播放器控件应出现")
         XCTAssertTrue(app.buttons["playerEpisodes"].exists)
         XCTAssertTrue(app.buttons["playerFullscreen"].exists)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["playerAirPlay"].waitForExistence(timeout: 5),
+            "播放器应有 AirPlay 入口"
+        )
+
 
         // 留出 HLS 起播时间，方便失败时从测试日志/截图定位。
         Thread.sleep(forTimeInterval: 12)

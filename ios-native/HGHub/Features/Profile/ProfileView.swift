@@ -344,6 +344,8 @@ private struct HistoryRow: View {
         .padding(10)
         .background(Color.hgSurface, in: RoundedRectangle(cornerRadius: 12))
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.card.displayTitle)，第 \(item.progress.ep) 集，进度 \(Int(progress * 100))%")
     }
 
     private var progress: CGFloat {

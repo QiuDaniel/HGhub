@@ -1,13 +1,25 @@
 import AVFoundation
+import AVKit
+import Defaults
 import Foundation
+import MediaPlayer
 import Observation
+import UIKit
 
 /// 整个 Feed 只创建一个 AVPlayer；翻页/切集只 replaceCurrentItem。
 @MainActor
 @Observable
-final class PlayerCoordinator {
+final class PlayerCoordinator: NSObject {
+    private static let mutedKey = Defaults.Key<Bool>("hghub_player_muted", default: true)
+
     let player = AVPlayer()
     let state = PlayerState()
+
+    @ObservationIgnored private lazy var pipLayer = AVPlayerLayer(player: player)
+    @ObservationIgnored private var pipController: AVPictureInPictureController?
+    private(set) var isPiPActive = false
+    private var nowTitle = "HGhub"
+    private var nowSubtitle = ""
 
     private let videos: VideoRepository
     private var timeObserver: Any?
@@ -21,6 +33,9 @@ final class PlayerCoordinator {
 
     init(videos: VideoRepository) {
         self.videos = videos
+        super.init()
+        state.isMuted = Defaults[Self.mutedKey]
+        player.isMuted = state.isMuted
         player.actionAtItemEnd = .pause
         player.automaticallyWaitsToMinimizeStalling = true
 
@@ -46,8 +61,13 @@ final class PlayerCoordinator {
                 self?.state.ended = true
                 self?.state.isPlaying = false
                 self?.state.phase = .paused
+                self?.refreshNowPlaying()
             }
         }
+
+        configureRemoteCommands()
+        UIApplication.shared.beginReceivingRemoteControlEvents()
+        refreshNowPlaying()
     }
 
     // MARK: - Playback
@@ -105,6 +125,35 @@ final class PlayerCoordinator {
             state.isPlaying = true
             state.phase = .playing
         }
+        refreshNowPlaying()
+    }
+
+    func updateMetadata(title: String, subtitle: String) {
+        nowTitle = title
+        nowSubtitle = subtitle
+        refreshNowPlaying()
+    }
+
+    // MARK: - PiP / AirPlay
+
+    var isPiPSupported: Bool {
+        AVPictureInPictureController.isPictureInPictureSupported()
+    }
+
+    func togglePiP() {
+        guard isPiPSupported else { return }
+        if pipController == nil {
+            let controller = AVPictureInPictureController(playerLayer: pipLayer)
+            controller?.delegate = self
+            pipController = controller
+            pipLayer.player = player
+        }
+        guard let pipController else { return }
+        if pipController.isPictureInPictureActive {
+            pipController.stopPictureInPicture()
+        } else if pipController.isPictureInPicturePossible {
+            pipController.startPictureInPicture()
+        }
     }
 
     func setRate(_ rate: Float) {
@@ -117,6 +166,11 @@ final class PlayerCoordinator {
     func setMuted(_ muted: Bool) {
         state.isMuted = muted
         player.isMuted = muted
+        Defaults[Self.mutedKey] = muted
+        if !muted {
+            // 用户主动开启声音时顺手激活音频会话，避免后台/来电后停留在静默。
+            try? AVAudioSession.sharedInstance().setActive(true)
+        }
     }
 
     func setVolume(_ volume: Float) {
@@ -189,6 +243,7 @@ final class PlayerCoordinator {
             state.isBuffering = false
             state.isPlaying = true
             state.phase = .playing
+            refreshNowPlaying()
         } catch is CancellationError {
             return
         } catch {
@@ -230,6 +285,69 @@ final class PlayerCoordinator {
         throw APIError.timeout
     }
 
+    private func refreshNowPlaying() {
+        let center = MPNowPlayingInfoCenter.default()
+        var info: [String: Any] = [
+            MPMediaItemPropertyTitle: nowTitle,
+            MPNowPlayingInfoPropertyElapsedPlaybackTime: state.time,
+            MPMediaItemPropertyPlaybackDuration: max(state.duration, 0),
+            MPNowPlayingInfoPropertyPlaybackRate: state.isPlaying ? Double(state.rate) : 0,
+            MPNowPlayingInfoPropertyDefaultPlaybackRate: Double(state.rate),
+        ]
+        if !nowSubtitle.isEmpty {
+            info[MPMediaItemPropertyArtist] = nowSubtitle
+        }
+        center.nowPlayingInfo = info
+        center.playbackState = state.isPlaying ? .playing : .paused
+    }
+
+    private func configureRemoteCommands() {
+        let center = MPRemoteCommandCenter.shared()
+        center.playCommand.isEnabled = true
+        center.pauseCommand.isEnabled = true
+        center.togglePlayPauseCommand.isEnabled = true
+        center.changePlaybackPositionCommand.isEnabled = true
+        center.skipForwardCommand.isEnabled = true
+        center.skipBackwardCommand.isEnabled = true
+        center.skipForwardCommand.preferredIntervals = [10]
+        center.skipBackwardCommand.preferredIntervals = [10]
+
+        center.playCommand.addTarget { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.state.isReady, !self.state.isPlaying else { return }
+                self.togglePlay()
+            }
+            return .success
+        }
+        center.pauseCommand.addTarget { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.state.isReady, self.state.isPlaying else { return }
+                self.togglePlay()
+            }
+            return .success
+        }
+        center.togglePlayPauseCommand.addTarget { [weak self] _ in
+            Task { @MainActor [weak self] in self?.togglePlay() }
+            return .success
+        }
+        center.changePlaybackPositionCommand.addTarget { [weak self] event in
+            guard let event = event as? MPChangePlaybackPositionCommandEvent else {
+                return .commandFailed
+            }
+            let position = event.positionTime
+            Task { @MainActor [weak self] in self?.seek(to: position) }
+            return .success
+        }
+        center.skipForwardCommand.addTarget { [weak self] _ in
+            Task { @MainActor [weak self] in self?.seek(to: (self?.state.time ?? 0) + 10) }
+            return .success
+        }
+        center.skipBackwardCommand.addTarget { [weak self] _ in
+            Task { @MainActor [weak self] in self?.seek(to: max((self?.state.time ?? 0) - 10, 0)) }
+            return .success
+        }
+    }
+
     private func handleTick(_ time: CMTime) {
         guard state.isReady else { return }
         let seconds = time.seconds
@@ -264,6 +382,26 @@ final class PlayerCoordinator {
         let seconds = item.duration.seconds
         if seconds.isFinite, seconds > 0 {
             state.duration = seconds
+        }
+    }
+}
+
+extension PlayerCoordinator: AVPictureInPictureControllerDelegate {
+    nonisolated func pictureInPictureControllerDidStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
+        Task { @MainActor [weak self] in self?.isPiPActive = true }
+    }
+
+    nonisolated func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
+        Task { @MainActor [weak self] in self?.isPiPActive = false }
+    }
+
+    nonisolated func pictureInPictureController(
+        _ pictureInPictureController: AVPictureInPictureController,
+        failedToStartPictureInPictureWithError error: Error
+    ) {
+        Task { @MainActor [weak self] in
+            self?.isPiPActive = false
+            self?.state.error = "画中画启动失败"
         }
     }
 }

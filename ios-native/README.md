@@ -7,7 +7,7 @@ HGhub 的**纯原生 iOS 客户端**（SwiftUI + AVPlayer）。它与仓库根�
 | 目标系统 | iOS 17.0+ |
 | 语言 / 框架 | Swift 6、SwiftUI、Observation、AVFoundation、async/await |
 | 工程生成 | XcodeGen（`project.yml` 是唯一工程配置源，`.xcodeproj` 不入库） |
-| 当前阶段 | **M6 完成：吃瓜列表 + 正文 HTML + 帖子互动** |
+| 当前阶段 | **M7 代码完成：系统播放能力 + 打磨；待真机/签名验收** |
 | 使用性质 | 个人学习 / 自用，不商用、不上架（见根目录 LICENSE） |
 
 ## 文档索引
@@ -21,6 +21,8 @@ HGhub 的**纯原生 iOS 客户端**（SwiftUI + AVPlayer）。它与仓库根�
 | [开发计划](docs/development-plan.md) | M0–M7 里程碑、任务清单、质量门禁、风险、进度 | 每次开工前 / 收工后 |
 | [接口契约](docs/api-contract.md) | 边缘信封、鉴权、端点、播放例外、封面加密、线路 | 调接口、排查“打不开/不能播” |
 | [决策记录](docs/decisions.md) | ADR：为什么原生、为什么不用 Tauri 内核、为什么选这些库 | 想推翻某个决定时 |
+| [安装与签名](docs/install.md) | Xcode 真机安装、免费签名 7 天、代理与 PiP/后台音频 | 要装到自己设备时 |
+| [M7 回归清单](docs/regression.md) | 自动化/真机验收项、已知边界 | 发布前逐项打勾 |
 
 ## 快速开始
 
@@ -59,6 +61,8 @@ xcodebuild -project HGHub.xcodeproj -scheme HGHub \
 **M5 已验证**：资料卡/退出、本地收藏与历史回填、历史续播、设置（主题/统计/清缓存/诊断/更新/关于）、固定+镜像线路（发布页解析/最多 60 条/探测）、DNS/代理/HTTP 诊断与复制；**38 个单测 + 21 个 UI 测试**通过。
 
 **M6 已验证**：吃瓜列表分页、帖子详情、SwiftSoup 清洗、ZMarkupParser 正文渲染、图片/链接、帖子点赞/收藏/评论与登录拦截；**43 个单测 + 23 个 UI 测试**通过。
+
+**M7 已实现（待真机验收）**：PiP（`AVPictureInPictureController`）、AirPlay（`AVRoutePickerView`）、锁屏/控制中心（`MPRemoteCommandCenter` + Now Playing）、后台音频（`UIBackgroundModes=audio`）、播放器默认静音（顶部静音按钮切换，状态持久化）、封面降采样、无障碍标签、Info.plist/图标/版本检查；安装步骤见 [安装与签名](docs/install.md)。**44 个单测 + 23 个 UI 测试**通过；真机手势/PiP/后台/签名需按安装文档验收。
 
 **网络说明**：iOS 的 `URLSession`/CFNetwork 自动读取系统代理；模拟器复用 macOS 系统代理（当前 `127.0.0.1:7890`），真机需在 Wi-Fi 设置里把 HTTP 代理指向 Mac 的局域网 IP。`curl` 不读系统代理，裸 `curl` 会误判“站点不可达”，排查时用 `curl -x http://127.0.0.1:7890 ...`。详见 [接口契约 § 代理](docs/api-contract.md#11-代理与网络排查)。
 

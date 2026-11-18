@@ -372,7 +372,11 @@ final class FeedCoverCell: UICollectionViewCell {
         spinner.startAnimating()
         task = Task { @MainActor [weak self] in
             do {
-                let image = try await ImagePipeline.shared.image(for: url)
+                let request = ImageRequest(
+                    url: url,
+                    processors: [ImageProcessors.Resize(width: 720)]
+                )
+                let image = try await ImagePipeline.shared.image(for: request)
                 guard !Task.isCancelled else { return }
                 self?.imageView.image = image
                 self?.spinner.stopAnimating()

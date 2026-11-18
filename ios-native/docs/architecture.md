@@ -267,6 +267,14 @@ M2 初版实现：横向 `|vx| > 1.15|vy|`、左右边缘各 20% 才进入亮度
 - `HTMLSanitizer`（SwiftSoup）+ `PostHTMLRenderer`（ZMarkupParser）+ `HTMLContentView`（UITextView）；去脚本/事件/`javascript:`，补全 URL，`data-src` 回填。
 - 登录拦截与 401 复用 M3 规则；帖子互动未落本地。
 
+### 7.10 系统播放能力（M7）
+
+- 音频会话 `.playback` + `UIBackgroundModes=audio`，支持后台音频。
+- 锁屏/控制中心：`MPRemoteCommandCenter`（play/pause/toggle/seek/±10s）+ `MPNowPlayingInfoCenter`（标题/副标题/进度/速率）。
+- AirPlay：`AVRoutePickerView` 包装为 `AirPlayRouteButton`，放在播放器侧边栏。
+- PiP：`AVPictureInPictureController` 绑定独立 `AVPlayerLayer`（同一 `AVPlayer`），按设备能力显示按钮；`PlayerCoordinator` 实现 delegate。
+- 封面降采样：Feed 封面用 Nuke `Resize(width: 720)`；只保留单播放器与下一条预加载。
+
 ## 8. 网络层
 
 ### 8.1 APIClient
