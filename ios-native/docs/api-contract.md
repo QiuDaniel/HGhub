@@ -1,6 +1,6 @@
 # 接口契约 · ios-native
 
-> 版本：v0.2（M3 基线）
+> 版本：v0.3（M4 基线）
 > 更新：2026-11-18
 > 来源：以现有 Rust 实现 [net.rs](../src-tauri/src/net.rs)、[api.rs](../src-tauri/src/api.rs)、[media.rs](../src-tauri/src/media.rs)、[lines.rs](../src-tauri/src/lines.rs) 与 [AIRead.md](../AIRead.md) 为准。
 > 目的：Swift 端按这份契约重写；**契约变了先改这里，再改代码**。
@@ -159,6 +159,9 @@ Content-Type: application/json
 
 - **分类必须数字 `cate_id`**：`/api/videos?cate_id=24`。旧的 `/api/videos/category/{slug}` 已 410；`category_id` 会被忽略返回全量。
 - **分页**：每页 20 条；App 首页用 `size=10`。`size/limit` 上游不一定认，按 20 处理。榜单只给前 20，不翻页。
+- **搜索**：`/api/search` 返回 `{ type, keyword, engine, items, pagination }`，`items` 与 Feed 同一 `VideoCard` 形状。
+- **榜单**：`/api/ranks/{kind}` 返回 `{ type, items }`，`items` 是 `RankItem`（`video_id` 而不是 `id`）；只取前 20。
+- **分类**：`cate_id=24/25` 当前有内容，26/27 为 0 条；首屏 0 条的频道在 UI 隐藏，不摆空货架。
 - **退出**：即使接口失败，也清本地会话。
 - **评论发送成功**：提示「审核通过后展示」，并重新拉第 1 页。
 - **关注/点赞/收藏**：未登录先弹登录，不预发请求。
@@ -313,6 +316,7 @@ Swift 侧用 `CryptoSwift` 的 `AES(key:blockMode: CBC(iv:), padding: .noPadding
 | `playback_117_3.json` | playback 117/3 | Playback 归一化（streams.main） | ✅ 已落盘 |
 | `video_detail_117.json` | `/api/videos/117` | Detail 解码（42 集 / 字符串 duration） | ✅ 已落盘，单测覆盖 |
 | `comments_117_3.json` | comments 117/3 | 评论解码（5 条 / 54 总 / 楼中楼） | ✅ 已落盘，单测覆盖 |
+| `rank_hot.json` | `/api/ranks/hot` | 榜单解码（20 条 / metric） | ✅ 已落盘，单测覆盖 |
 | `posts_page1.json` | `/api/posts?page=1` | 吃瓜列表 | 待 M6 |
 | `post_detail_1.json` | `/api/posts/1` | 正文 HTML | 待 M6 |
 | `line_state.json` | 本地 | 线路 UI | 待 M5 |
@@ -328,6 +332,7 @@ Swift 侧用 `CryptoSwift` 的 `AES(key:blockMode: CBC(iv:), padding: .noPadding
 |---|---|---|
 | 2026-11-17 | 播放改 `POST /api/videos/{id}/episodes/{ep}/playback`，body `{}`，响应 `streams.main` | 老 `video_url` 为空串；必须换接口 |
 | 2026-11-18 | Detail 的 `duration` 为字符串；评论正文同时有 `content` / `text` | 模型兼容字符串数字；评论取 `content` 优先 |
+| 2026-11-18 | 分类 26/27 为空；榜单 `VideoCard` 字段名为 `video_id` | 空频道隐藏；RankItem 单独建模 |
 | 2026-11-17 | 分类改数字 `cate_id`；`/api/videos/category/{slug}` 410 | 频道写 24/25/26/27；空频道隐藏 |
 | 2026-11-17 | iOS WebView 的 `<video>` 不经过 WKURLSchemeHandler | 原生工程无此问题；但证明 HLS 可直连 |
 | 持续 | CDN 域名漂移 | 线路切换 + 不硬编码域名 |

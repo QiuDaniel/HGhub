@@ -241,6 +241,15 @@ M2 初版实现：横向 `|vx| > 1.15|vy|`、左右边缘各 20% 才进入亮度
 - 分享：详情面板用系统 `ShareLink`，链接为 `{base}/video/{id}/`。
 - 登录：`LoginSheet` 调真实 `loginByPassword`，token 写 Valet 并注入 `APIClient`；退出即使接口失败也清本地。
 
+### 7.7 搜索 / 分类 / 榜单（M4）
+
+- `VideoDiscoveryRepository`：`search`、`category`、`ranks`，由 `APIClient` 走信封。
+- `SearchViewModel`：空词不请求，提交时写 `LocalLibrary.searchHistory`；分页/去重/错误态；结果进 `FeedContext(source: "search", query:)`。
+- `CategoryViewModel`：4 个频道并发首屏（每频道 8 条），0 条频道隐藏；`ChannelViewModel` 负责频道内分页。
+- `RankViewModel`：hot/recommend/potential，前 20，不翻页；`RankItem` 单独解码 `video_id`。
+- `FeedContext` 增加 `source/query/cate`；`FeedViewModel` 按来源继续请求 search/category 下一页，避免从搜索/频道进入 Feed 后错拉首页。
+- 列表入口统一调 `AppState.presentFeed(...)`，统一带续播历史。
+
 ## 8. 网络层
 
 ### 8.1 APIClient

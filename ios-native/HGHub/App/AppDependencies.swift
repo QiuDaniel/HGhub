@@ -7,6 +7,7 @@ final class AppDependencies {
     let videos: VideoRepository
     let account: AccountRepository
     let social: VideoSocialRepository
+    let discovery: VideoDiscoveryRepository
     let session: SessionStore
     let library: LocalLibrary
     let lines: LineStore
@@ -19,6 +20,7 @@ final class AppDependencies {
         self.videos = LiveVideoRepository(api: api)
         self.account = LiveAccountRepository(api: api)
         self.social = LiveVideoSocialRepository(api: api)
+        self.discovery = LiveVideoDiscoveryRepository(api: api)
         self.session = SessionStore()
         self.library = LocalLibrary()
         self.lines = LineStore()

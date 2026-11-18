@@ -11,6 +11,8 @@ struct FeedContext: Identifiable, Hashable, Sendable {
     var startTime: Double?
     var page: Int
     var pages: Int
+    var query: String?
+    var cate: String?
 
     var videoIDs: [Int] { cards.map(\.id) }
 
@@ -22,7 +24,9 @@ struct FeedContext: Identifiable, Hashable, Sendable {
         startEp: Int? = nil,
         startTime: Double? = nil,
         page: Int = 1,
-        pages: Int = 1
+        pages: Int = 1,
+        query: String? = nil,
+        cate: String? = nil
     ) {
         self.id = UUID()
         self.cards = cards
@@ -33,6 +37,8 @@ struct FeedContext: Identifiable, Hashable, Sendable {
         self.startTime = startTime
         self.page = page
         self.pages = pages
+        self.query = query
+        self.cate = cate
     }
 
     /// 兼容只传 id 的旧入口；M2 首页会传完整 cards。

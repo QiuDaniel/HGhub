@@ -1,4 +1,3 @@
-import NukeUI
 import SwiftUI
 
 struct HomeView: View {
@@ -83,27 +82,18 @@ struct HomeView: View {
 
     // MARK: - Grid
 
+    private var grid: some View {
+        VideoPosterGrid(items: model.items, onOpen: { index in
+            open(index: index)
+        }, onNearEnd: { id in
+            Task { await model.loadMoreIfNeeded(currentID: id) }
+        })
+    }
+
     private let columns = [
         GridItem(.flexible(), spacing: 12, alignment: .top),
         GridItem(.flexible(), spacing: 12, alignment: .top),
     ]
-
-    private var grid: some View {
-        LazyVGrid(columns: columns, spacing: 18) {
-            ForEach(Array(model.items.enumerated()), id: \.element.id) { index, card in
-                Button {
-                    open(index: index)
-                } label: {
-                    VideoCardCell(card: card)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("videoCard_\(card.id)")
-                .task {
-                    await model.loadMoreIfNeeded(currentID: card.id)
-                }
-            }
-        }
-    }
 
     private var loadingGrid: some View {
         LazyVGrid(columns: columns, spacing: 18) {
@@ -173,99 +163,5 @@ struct HomeView: View {
             page: model.page,
             pages: model.pages
         )
-    }
-}
-
-// MARK: - Card
-
-private struct VideoCardCell: View {
-    let card: VideoCard
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            ZStack(alignment: .bottomLeading) {
-                Color.hgSurface2
-
-                LazyImage(url: URL(string: card.cover ?? "")) { state in
-                    if let image = state.image {
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } else if state.error != nil {
-                        Color.hgSurface2
-                            .overlay {
-                                Image(systemName: "photo")
-                                    .foregroundStyle(Color.hgTextSecondary)
-                            }
-                    } else {
-                        Color.hgSurface2
-                            .overlay {
-                                ProgressView()
-                                    .controlSize(.small)
-                            }
-                    }
-                }
-                .scaledToFill()
-
-                LinearGradient(
-                    colors: [.clear, .black.opacity(0.62)],
-                    startPoint: .center,
-                    endPoint: .bottom
-                )
-
-                HStack(spacing: 6) {
-                    Text("\(card.episodeTotal) 集")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 4)
-                        .background(.black.opacity(0.45), in: Capsule())
-
-                    Spacer(minLength: 0)
-
-                    if let score = card.score {
-                        Text(String(format: "%.1f", score))
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(Color.hgPrimary)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 4)
-                            .background(.black.opacity(0.45), in: Capsule())
-                    }
-                }
-                .padding(8)
-            }
-            .aspectRatio(3 / 4, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-            Text(card.displayTitle)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.hgText)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            HStack(spacing: 4) {
-                Text(card.authorName)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-                if let hot = card.hot, hot > 0 {
-                    Image(systemName: "flame.fill")
-                        .font(.system(size: 9))
-                    Text(hotText(hot))
-                }
-            }
-            .font(.caption2)
-            .foregroundStyle(Color.hgTextSecondary)
-        }
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(card.displayTitle)，\(card.episodeTotal) 集")
-    }
-
-    private func hotText(_ value: Int) -> String {
-        if value >= 10_000 {
-            return String(format: "%.1fw", Double(value) / 10_000)
-        }
-        return "\(value)"
     }
 }

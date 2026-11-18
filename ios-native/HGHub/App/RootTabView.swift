@@ -29,15 +29,23 @@ struct RootTabView: View {
             .tag(AppTab.home)
 
             NavigationStack(path: $searchPath) {
-                SearchView()
+                SearchView(deps: deps)
                     .navigationDestination(for: Route.self) { destination($0) }
             }
             .tabItem { Label("搜索", systemImage: "magnifyingglass") }
             .tag(AppTab.search)
 
             NavigationStack(path: $categoryPath) {
-                CategoryView()
-                    .navigationDestination(for: Route.self) { destination($0) }
+                CategoryView(
+                    deps: deps,
+                    onOpenChannel: { channel in
+                        categoryPath = categoryPath + [.channel(cate: channel.cate, name: channel.name)]
+                    },
+                    onOpenRanks: {
+                        categoryPath = categoryPath + [.ranks]
+                    }
+                )
+                .navigationDestination(for: Route.self) { destination($0) }
             }
             .tabItem { Label("分类", systemImage: "square.grid.2x2") }
             .tag(AppTab.category)
@@ -73,9 +81,9 @@ struct RootTabView: View {
     private func destination(_ route: Route) -> some View {
         switch route {
         case .channel(let cate, let name):
-            ChannelView(cate: cate, name: name)
+            ChannelView(cate: cate, name: name, deps: deps)
         case .ranks:
-            RankView()
+            RankView(deps: deps)
         case .settings:
             SettingsView(deps: deps)
         case .posts:

@@ -39,6 +39,34 @@ final class AppState {
         return false
     }
 
+    /// 统一从列表构造播放上下文：首页/搜索/频道/榜单都走这里，保证续播和来源分页一致。
+    func presentFeed(
+        cards: [VideoCard],
+        index: Int,
+        title: String,
+        source: String,
+        page: Int,
+        pages: Int,
+        query: String? = nil,
+        cate: String? = nil,
+        library: LocalLibrary
+    ) {
+        guard cards.indices.contains(index) else { return }
+        let history = library.historyProgress(for: cards[index].id)
+        feed = FeedContext(
+            cards: cards,
+            index: index,
+            title: title,
+            source: source,
+            startEp: history?.ep,
+            startTime: history?.t,
+            page: page,
+            pages: pages,
+            query: query,
+            cate: cate
+        )
+    }
+
     func showToast(_ message: String, icon: Toast.Icon = .info) {
         let next = Toast(message: message, icon: icon)
         toast = next

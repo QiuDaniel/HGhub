@@ -26,7 +26,11 @@ struct FeedScreen: View {
     init(context: FeedContext, deps: AppDependencies) {
         self.context = context
         self.deps = deps
-        _model = State(initialValue: FeedViewModel(context: context, videos: deps.videos))
+        _model = State(initialValue: FeedViewModel(
+            context: context,
+            videos: deps.videos,
+            discovery: deps.discovery
+        ))
         _player = State(initialValue: PlayerCoordinator(videos: deps.videos))
         _currentEp = State(initialValue: max(context.startEp ?? 1, 1))
         let firstCard = context.cards.indices.contains(context.index) ? context.cards[context.index] : nil

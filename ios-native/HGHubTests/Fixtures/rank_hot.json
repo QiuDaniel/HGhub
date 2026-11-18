@@ -1,0 +1,495 @@
+{
+  "items": [
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260826/2026082615264138039.jpg?auth_key=REDACTED",
+      "episode_count": 13,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 6019,
+      "metrics": {
+        "collect": 15239,
+        "comment": 442,
+        "like": 33089,
+        "play": 37106024
+      },
+      "rank": 1,
+      "score": 9.5,
+      "tags": [
+        "现代",
+        "大男主",
+        "都市",
+        "绿帽"
+      ],
+      "title": "女友帮我操闺蜜",
+      "video_id": 2833
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20261002/2026100215204056344.jpg?auth_key=REDACTED",
+      "episode_count": 10,
+      "intervened": false,
+      "is_finished": true,
+      "metric_label": "热力指数",
+      "metric_value": 5859,
+      "metrics": {
+        "collect": 14224,
+        "comment": 487,
+        "like": 26406,
+        "play": 21018994
+      },
+      "rank": 2,
+      "score": 9.8,
+      "tags": [
+        "都市",
+        "系统",
+        "乱伦"
+      ],
+      "title": "时停手表",
+      "video_id": 7628
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260808/2026080818142765651.jpg?auth_key=REDACTED",
+      "episode_count": 36,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5837,
+      "metrics": {
+        "collect": 5546,
+        "comment": 926,
+        "like": 11012,
+        "play": 24020541
+      },
+      "rank": 3,
+      "score": 8.9,
+      "tags": [
+        "现代",
+        "校园",
+        "职场"
+      ],
+      "title": "少妇白洁",
+      "video_id": 323
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260920/2026092015295331637.jpg?auth_key=REDACTED",
+      "episode_count": 25,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5771,
+      "metrics": {
+        "collect": 7325,
+        "comment": 380,
+        "like": 13054,
+        "play": 16249612
+      },
+      "rank": 4,
+      "score": 9.2,
+      "tags": [
+        "都市",
+        "乱伦",
+        "年下",
+        "母子"
+      ],
+      "title": "母上攻略",
+      "video_id": 6233
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260924/2026092411335942198.jpg?auth_key=REDACTED",
+      "episode_count": 12,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5717,
+      "metrics": {
+        "collect": 10325,
+        "comment": 738,
+        "like": 18396,
+        "play": 16191931
+      },
+      "rank": 5,
+      "score": 9.8,
+      "tags": [
+        "现代",
+        "都市",
+        "sm",
+        "乱伦",
+        "母子"
+      ],
+      "title": "网调我的冰山妈妈",
+      "video_id": 6221
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260924/2026092411162272798.jpg?auth_key=REDACTED",
+      "episode_count": 21,
+      "intervened": false,
+      "is_finished": true,
+      "metric_label": "热力指数",
+      "metric_value": 5704,
+      "metrics": {
+        "collect": 10878,
+        "comment": 1472,
+        "like": 36137,
+        "play": 63716579
+      },
+      "rank": 6,
+      "score": 9.6,
+      "tags": [
+        "超能力",
+        "都市",
+        "奇幻"
+      ],
+      "title": "神瞳觉醒 第一季",
+      "video_id": 12
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260924/2026092411173970764.jpg?auth_key=REDACTED",
+      "episode_count": 42,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5613,
+      "metrics": {
+        "collect": 11442,
+        "comment": 2759,
+        "like": 42098,
+        "play": 41754791
+      },
+      "rank": 7,
+      "score": 9.6,
+      "tags": [
+        "现代",
+        "校园",
+        "同学"
+      ],
+      "title": "高三爱情故事",
+      "video_id": 117
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260830/2026083017142733552.jpg?auth_key=REDACTED",
+      "episode_count": 6,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5604,
+      "metrics": {
+        "collect": 7953,
+        "comment": 551,
+        "like": 14775,
+        "play": 12922434
+      },
+      "rank": 8,
+      "score": 9.6,
+      "tags": [
+        "大女主",
+        "仙侠",
+        "权谋"
+      ],
+      "title": "琼明神女录",
+      "video_id": 3483
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260910/2026091015575814127.jpg?auth_key=REDACTED",
+      "episode_count": 10,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5538,
+      "metrics": {
+        "collect": 10272,
+        "comment": 551,
+        "like": 17400,
+        "play": 14809616
+      },
+      "rank": 9,
+      "score": 9.7,
+      "tags": [
+        "现代",
+        "娱乐圈",
+        "职场"
+      ],
+      "title": "存在感：零",
+      "video_id": 3520
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260821/2026082110535130688.jpg?auth_key=REDACTED",
+      "episode_count": 14,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5523,
+      "metrics": {
+        "collect": 6340,
+        "comment": 777,
+        "like": 12776,
+        "play": 15055460
+      },
+      "rank": 10,
+      "score": 9.2,
+      "tags": [
+        "现代",
+        "乱伦",
+        "绿帽",
+        "母子"
+      ],
+      "title": "妈妈陪儿子高考",
+      "video_id": 2183
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260911/2026091117244785674.png?auth_key=REDACTED",
+      "episode_count": 35,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5364,
+      "metrics": {
+        "collect": 5417,
+        "comment": 531,
+        "like": 11967,
+        "play": 12331765
+      },
+      "rank": 11,
+      "score": 9.3,
+      "tags": [
+        "现代",
+        "都市",
+        "赘婿",
+        "甜宠"
+      ],
+      "title": "我的岳母苏沛真",
+      "video_id": 5161
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260905/2026090517351596250.jpg?auth_key=REDACTED",
+      "episode_count": 16,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5326,
+      "metrics": {
+        "collect": 6880,
+        "comment": 681,
+        "like": 13920,
+        "play": 16475778
+      },
+      "rank": 12,
+      "score": 9.5,
+      "tags": [
+        "都市",
+        "乱伦",
+        "母子"
+      ],
+      "title": "母子同欢 ",
+      "video_id": 4466
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20261016/2026101616050951359.jpg?auth_key=REDACTED",
+      "episode_count": 10,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5288,
+      "metrics": {
+        "collect": 6366,
+        "comment": 248,
+        "like": 8768,
+        "play": 9109792
+      },
+      "rank": 13,
+      "score": 9.6,
+      "tags": [
+        "现代",
+        "游戏",
+        "后宫"
+      ],
+      "title": "淫妻派对 ",
+      "video_id": 9061
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20261028/2026102810235875107.jpg?auth_key=REDACTED",
+      "episode_count": 6,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5202,
+      "metrics": {
+        "collect": 6403,
+        "comment": 148,
+        "like": 6913,
+        "play": 7014256
+      },
+      "rank": 14,
+      "score": 9.3,
+      "tags": [
+        "大男主",
+        "都市",
+        "系统"
+      ],
+      "title": "任意门",
+      "video_id": 10586
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260924/2026092411164277894.jpg?auth_key=REDACTED",
+      "episode_count": 13,
+      "intervened": false,
+      "is_finished": true,
+      "metric_label": "热力指数",
+      "metric_value": 5190,
+      "metrics": {
+        "collect": 11720,
+        "comment": 769,
+        "like": 32857,
+        "play": 15874771
+      },
+      "rank": 15,
+      "score": 9.8,
+      "tags": [
+        "现代",
+        "都市",
+        "后宫",
+        "ntr",
+        "绿帽"
+      ],
+      "title": "东京牛头人",
+      "video_id": 5667
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260811/2026081117115052222.jpg?auth_key=REDACTED",
+      "episode_count": 22,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5120,
+      "metrics": {
+        "collect": 3754,
+        "comment": 482,
+        "like": 4645,
+        "play": 4148849
+      },
+      "rank": 16,
+      "score": 9.3,
+      "tags": [
+        "古风",
+        "武侠",
+        "系统"
+      ],
+      "title": "废柴杂役",
+      "video_id": 625
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260813/2026081317002977604.jpg?auth_key=REDACTED",
+      "episode_count": 7,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5109,
+      "metrics": {
+        "collect": 3800,
+        "comment": 244,
+        "like": 8662,
+        "play": 12159702
+      },
+      "rank": 17,
+      "score": 8.8,
+      "tags": [
+        "现代",
+        "犯罪",
+        "校园"
+      ],
+      "title": "深夜潜入女大学生宿舍",
+      "video_id": 903
+    },
+    {
+      "cate_name": "漫剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260914/2026091412464846402.jpg?auth_key=REDACTED",
+      "episode_count": 12,
+      "intervened": false,
+      "is_finished": true,
+      "metric_label": "热力指数",
+      "metric_value": 5101,
+      "metrics": {
+        "collect": 2466,
+        "comment": 262,
+        "like": 4851,
+        "play": 5019833
+      },
+      "rank": 18,
+      "score": 9.7,
+      "tags": [
+        "现代",
+        "系统",
+        "逆袭",
+        "姐弟"
+      ],
+      "title": "系统带我攻略弟弟（漫剧版）",
+      "video_id": 5010
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260808/2026080818521256729.jpg?auth_key=REDACTED",
+      "episode_count": 12,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5090,
+      "metrics": {
+        "collect": 1340,
+        "comment": 290,
+        "like": 1934,
+        "play": 5749339
+      },
+      "rank": 19,
+      "score": 9.2,
+      "tags": [
+        "都市",
+        "后宫",
+        "逆袭"
+      ],
+      "title": "胖哥的传奇人生",
+      "video_id": 338
+    },
+    {
+      "cate_name": "短剧",
+      "cover": "https://pic.qnlycc.cn/upload_01/upload/20260926/2026092612210993578.png?auth_key=REDACTED",
+      "episode_count": 13,
+      "intervened": false,
+      "is_finished": false,
+      "metric_label": "热力指数",
+      "metric_value": 5068,
+      "metrics": {
+        "collect": 6382,
+        "comment": 70,
+        "like": 6698,
+        "play": 6293229
+      },
+      "rank": 20,
+      "score": 9.4,
+      "tags": [
+        "大男主",
+        "都市",
+        "后宫",
+        "熟女"
+      ],
+      "title": "催眠眼镜",
+      "video_id": 6905
+    }
+  ],
+  "type": "hot"
+}

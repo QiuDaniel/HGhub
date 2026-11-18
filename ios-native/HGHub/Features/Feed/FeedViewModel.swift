@@ -6,6 +6,10 @@ import Observation
 @Observable
 final class FeedViewModel {
     private let videos: VideoRepository
+    private let discovery: VideoDiscoveryRepository?
+    private let source: String
+    private let query: String?
+    private let cate: String?
 
     private(set) var cards: [VideoCard]
     var index: Int
@@ -16,8 +20,16 @@ final class FeedViewModel {
 
     private var seen: Set<Int>
 
-    init(context: FeedContext, videos: VideoRepository) {
+    init(
+        context: FeedContext,
+        videos: VideoRepository,
+        discovery: VideoDiscoveryRepository? = nil
+    ) {
         self.videos = videos
+        self.discovery = discovery
+        self.source = context.source
+        self.query = context.query
+        self.cate = context.cate
         self.cards = context.cards
         self.index = max(0, min(context.index, max(context.cards.count - 1, 0)))
         let startPage = max(context.page, 1)
@@ -42,7 +54,7 @@ final class FeedViewModel {
         defer { isLoadingMore = false }
 
         do {
-            let response = try await videos.feed(page: page + 1, size: 10)
+            let response = try await fetch(page: page + 1)
             guard !Task.isCancelled else { return }
             for card in response.items where seen.insert(card.id).inserted {
                 cards.append(card)
@@ -54,6 +66,22 @@ final class FeedViewModel {
         } catch {
             self.error = error.localizedDescription
         }
+    }
+
+    private func fetch(page: Int) async throws -> Paged<VideoCard> {
+        switch source {
+        case "search":
+            if let discovery, let query, !query.isEmpty {
+                return try await discovery.search(query: query, page: page, size: 10)
+            }
+        case "channel":
+            if let discovery, let cate {
+                return try await discovery.category(cate: cate, page: page, size: 10)
+            }
+        default:
+            break
+        }
+        return try await videos.feed(page: page, size: 10)
     }
 
     func select(_ next: Int) {

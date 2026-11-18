@@ -259,6 +259,88 @@ final class M0SmokeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["关闭"].exists)
     }
 
+    func testSearchFindsAndOpensFeed() {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.tabBars.buttons["搜索"].tap()
+        let field = app.textFields["searchField"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "搜索页应有输入框")
+        field.tap()
+        field.typeText("高三\n")
+
+        let card = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'videoCard_'")
+        ).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 30), "搜索应返回结果")
+        XCTAssertTrue(app.staticTexts["「高三」"].exists)
+
+        card.tap()
+        XCTAssertTrue(app.buttons["feedClose"].waitForExistence(timeout: 10), "搜索结果应能进入 Feed")
+    }
+
+    func testRankTabsAndOpenFeed() {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.tabBars.buttons["搜索"].tap()
+        let rank = app.buttons["排行榜"]
+        XCTAssertTrue(rank.waitForExistence(timeout: 10))
+        rank.tap()
+        XCTAssertTrue(app.navigationBars["榜单"].waitForExistence(timeout: 10))
+
+        let row = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'rankRow_'")
+        ).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 30), "榜单应加载条目")
+
+        app.buttons["rankTab_recommend"].tap()
+        XCTAssertTrue(row.waitForExistence(timeout: 30), "切换榜单后应重新加载")
+
+        row.tap()
+        XCTAssertTrue(app.buttons["feedClose"].waitForExistence(timeout: 10), "榜单条目应能进入 Feed")
+    }
+
+    func testCategoryCardTapOpensFeed() {
+        let app = XCUIApplication()
+        app.launch()
+        app.tabBars.buttons["分类"].tap()
+        let card = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'channelCard_24_'")
+        ).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 30))
+        card.tap()
+        XCTAssertTrue(app.buttons["feedClose"].waitForExistence(timeout: 10))
+    }
+
+    func testCategoryRankNavigation() {
+        let app = XCUIApplication()
+        app.launch()
+        app.tabBars.buttons["分类"].tap()
+        let rank = app.buttons["categoryRanks"]
+        XCTAssertTrue(rank.waitForExistence(timeout: 20))
+        rank.tap()
+        XCTAssertTrue(app.navigationBars["榜单"].waitForExistence(timeout: 10))
+    }
+
+    func testCategoryChannelOpensFeed() {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.tabBars.buttons["分类"].tap()
+        let header = app.buttons["channelHeader_24"]
+        XCTAssertTrue(header.waitForExistence(timeout: 30), "分类应加载 24 频道")
+        header.tap()
+
+        XCTAssertTrue(app.navigationBars["AI成人短剧"].waitForExistence(timeout: 10))
+        let video = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'videoCard_'")
+        ).firstMatch
+        XCTAssertTrue(video.waitForExistence(timeout: 30), "频道应加载短剧")
+        video.tap()
+        XCTAssertTrue(app.buttons["feedClose"].waitForExistence(timeout: 10), "频道条目应能进入 Feed")
+    }
+
     func testContractCheckOpens() {
         let app = XCUIApplication()
         app.launch()
