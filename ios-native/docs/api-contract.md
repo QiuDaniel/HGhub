@@ -1,6 +1,6 @@
 # 接口契约 · ios-native
 
-> 版本：v0.4（M5 基线）
+> 版本：v0.5（M6 基线）
 > 更新：2026-11-18
 > 来源：以现有 Rust 实现 [net.rs](../src-tauri/src/net.rs)、[api.rs](../src-tauri/src/api.rs)、[media.rs](../src-tauri/src/media.rs)、[lines.rs](../src-tauri/src/lines.rs) 与 [AIRead.md](../AIRead.md) 为准。
 > 目的：Swift 端按这份契约重写；**契约变了先改这里，再改代码**。
@@ -151,7 +151,8 @@ Content-Type: application/json
 | 17 | 关注用户 | POST/DELETE | `/api/users/{uid}/follow` | - | ✓ |
 | 18 | 帖子点赞 | POST/DELETE | `/api/posts/{id}/like` | - | ✓ |
 | 19 | 帖子收藏 | POST/DELETE | `/api/posts/{id}/collect` | - | ✓ |
-| 20 | 帖子评论 | GET | `/api/posts/{id}/comments?page=&size=` | - | - |
+| 20 | 帖子评论列表 | GET | `/api/posts/{id}/comments?page=&size=` | - | - |
+| 21 | 帖子评论发送 | POST | `/api/posts/{id}/comments` | `{text,reply_id?}` | ✓ |
 
 本地能力（不走上游）：`app_boot`（读本地 session + base）、`cache_clear`、`line_state`、`line_mirrors`、`line_probe`、`check_update`（GitHub API）、`open_url`（系统打开）。
 
@@ -317,8 +318,9 @@ Swift 侧用 `CryptoSwift` 的 `AES(key:blockMode: CBC(iv:), padding: .noPadding
 | `video_detail_117.json` | `/api/videos/117` | Detail 解码（42 集 / 字符串 duration） | ✅ 已落盘，单测覆盖 |
 | `comments_117_3.json` | comments 117/3 | 评论解码（5 条 / 54 总 / 楼中楼） | ✅ 已落盘，单测覆盖 |
 | `rank_hot.json` | `/api/ranks/hot` | 榜单解码（20 条 / metric） | ✅ 已落盘，单测覆盖 |
-| `posts_page1.json` | `/api/posts?page=1` | 吃瓜列表 | 待 M6 |
-| `post_detail_1.json` | `/api/posts/1` | 正文 HTML | 待 M6 |
+| `posts_page1.json` | `/api/posts?page=1` | 吃瓜列表（10 条 / 80 页） | ✅ 已落盘，单测覆盖 |
+| `post_detail_67.json` | `/api/posts/67` | 正文 HTML / 计数 / interaction | ✅ 已落盘，单测覆盖 |
+| `post_comments_67.json` | posts/67/comments | 帖子评论（2 条） | ✅ 已落盘，单测覆盖 |
 | `line_state.json` | 本地 | 线路 UI | 待 M5 |
 | `error_business.json` | 任意 `status:0` | 错误映射 | 待 M1 |
 

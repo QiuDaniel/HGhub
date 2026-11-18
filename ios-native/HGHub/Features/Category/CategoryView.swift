@@ -4,6 +4,7 @@ struct CategoryView: View {
     let deps: AppDependencies
     let onOpenChannel: (ChannelInfo) -> Void
     let onOpenRanks: () -> Void
+    let onOpenPosts: () -> Void
 
     @Environment(AppState.self) private var app
     @State private var model: CategoryViewModel
@@ -11,11 +12,13 @@ struct CategoryView: View {
     init(
         deps: AppDependencies,
         onOpenChannel: @escaping (ChannelInfo) -> Void,
-        onOpenRanks: @escaping () -> Void
+        onOpenRanks: @escaping () -> Void,
+        onOpenPosts: @escaping () -> Void
     ) {
         self.deps = deps
         self.onOpenChannel = onOpenChannel
         self.onOpenRanks = onOpenRanks
+        self.onOpenPosts = onOpenPosts
         _model = State(initialValue: CategoryViewModel(discovery: deps.discovery))
     }
 
@@ -24,6 +27,7 @@ struct CategoryView: View {
             LazyVStack(alignment: .leading, spacing: 18) {
                 header
                 rankEntry
+                postsEntry
 
                 if model.isLoading, model.rows.isEmpty {
                     HStack {
@@ -97,6 +101,37 @@ struct CategoryView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("categoryRanks")
+    }
+
+    private var postsEntry: some View {
+        Button(action: onOpenPosts) {
+            HStack(spacing: 12) {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Color.hgPrimary)
+                    .frame(width: 42, height: 42)
+                    .background(Color.hgPrimary.opacity(0.14), in: RoundedRectangle(cornerRadius: 11))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("黄果吃瓜")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.hgText)
+                    Text("圈内爆料 · 每日更新")
+                        .font(.caption2)
+                        .foregroundStyle(Color.hgTextSecondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(Color.hgTextSecondary)
+            }
+            .padding(12)
+            .background(Color.hgSurface, in: RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("categoryPosts")
     }
 
     private func channelSection(_ row: CategoryRow) -> some View {

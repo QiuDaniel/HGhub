@@ -7,7 +7,7 @@ HGhub 的**纯原生 iOS 客户端**（SwiftUI + AVPlayer）。它与仓库根�
 | 目标系统 | iOS 17.0+ |
 | 语言 / 框架 | Swift 6、SwiftUI、Observation、AVFoundation、async/await |
 | 工程生成 | XcodeGen（`project.yml` 是唯一工程配置源，`.xcodeproj` 不入库） |
-| 当前阶段 | **M5 完成：我的 + 收藏/历史 + 设置 + 线路/诊断** |
+| 当前阶段 | **M6 完成：吃瓜列表 + 正文 HTML + 帖子互动** |
 | 使用性质 | 个人学习 / 自用，不商用、不上架（见根目录 LICENSE） |
 
 ## 文档索引
@@ -57,6 +57,8 @@ xcodebuild -project HGHub.xcodeproj -scheme HGHub \
 **M4 已验证**：搜索（历史/热门题材/分页/进 Feed）、分类总览（24/25 可见，26/27 空频道自动隐藏）、频道分页、热播/推荐/潜力三榜单（前 20）、搜索/频道/榜单/分类统一构造 `FeedContext` 并按来源续页；**35 个单测 + 18 个 UI 测试**通过。
 
 **M5 已验证**：资料卡/退出、本地收藏与历史回填、历史续播、设置（主题/统计/清缓存/诊断/更新/关于）、固定+镜像线路（发布页解析/最多 60 条/探测）、DNS/代理/HTTP 诊断与复制；**38 个单测 + 21 个 UI 测试**通过。
+
+**M6 已验证**：吃瓜列表分页、帖子详情、SwiftSoup 清洗、ZMarkupParser 正文渲染、图片/链接、帖子点赞/收藏/评论与登录拦截；**43 个单测 + 23 个 UI 测试**通过。
 
 **网络说明**：iOS 的 `URLSession`/CFNetwork 自动读取系统代理；模拟器复用 macOS 系统代理（当前 `127.0.0.1:7890`），真机需在 Wi-Fi 设置里把 HTTP 代理指向 Mac 的局域网 IP。`curl` 不读系统代理，裸 `curl` 会误判“站点不可达”，排查时用 `curl -x http://127.0.0.1:7890 ...`。详见 [接口契约 § 代理](docs/api-contract.md#11-代理与网络排查)。
 

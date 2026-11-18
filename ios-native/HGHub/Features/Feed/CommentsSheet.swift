@@ -238,7 +238,7 @@ struct CommentsSheet: View {
     }
 }
 
-private struct CommentRow: View {
+struct CommentRow: View {
     let comment: Comment
 
     var body: some View {

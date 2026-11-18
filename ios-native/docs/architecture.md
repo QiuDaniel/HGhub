@@ -259,6 +259,14 @@ M2 初版实现：横向 `|vx| > 1.15|vy|`、左右边缘各 20% 才进入亮度
 - 更新：GitHub Release 数字段比较，只展示不自动安装；404 视为无 Release。
 - 缓存清理不清登录/收藏/历史。
 
+### 7.9 吃瓜 Posts（M6）
+
+- `PostRepository`：列表、详情、评论、发评论、点赞、收藏；`Post` 模型兼容列表/详情可选字段。
+- `PostsViewModel`：2 列卡片、分页/去重/错误态；入口在分类页「黄果吃瓜」。
+- `PostDetailViewModel`：详情 + 乐观点赞/收藏；`PostCommentsViewModel` 分页/发送。
+- `HTMLSanitizer`（SwiftSoup）+ `PostHTMLRenderer`（ZMarkupParser）+ `HTMLContentView`（UITextView）；去脚本/事件/`javascript:`，补全 URL，`data-src` 回填。
+- 登录拦截与 401 复用 M3 规则；帖子互动未落本地。
+
 ## 8. 网络层
 
 ### 8.1 APIClient
@@ -318,9 +326,9 @@ actor APIClient {
 ### 9.3 正文 HTML
 
 - SwiftSoup 清洗：去 `script/style/iframe`、事件属性、`javascript:`；`data-src` 回填；相对地址补全；删 `srcset`。
-- ZMarkupParser 渲染成 `NSAttributedString`；`IMG_HTMLTagName(handler:)` 接一个基于 Nuke 的 `ZNSTextAttachmentHandler`。
+- ZMarkupParser 渲染成 `NSAttributedString`；正文图片使用默认 `ZNSTextAttachment` + URLSession（走系统代理）加载，封面仍走 Nuke。
 - 用不可滚动的 `UITextView`（`UIViewRepresentable`）承载，链接走 `UITextViewDelegate`。
-- 渲染放后台，结果按 post id 缓存；同一篇不重复解析。
+- M6 实现：清洗与渲染在详情加载后执行；`HTMLContentView` 用不可滚动 UITextView 自适应高度。点击大图（P2）与渲染缓存留后续。
 
 ## 10. 持久化
 

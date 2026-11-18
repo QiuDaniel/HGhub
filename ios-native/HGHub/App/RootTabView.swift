@@ -43,6 +43,9 @@ struct RootTabView: View {
                     },
                     onOpenRanks: {
                         categoryPath = categoryPath + [.ranks]
+                    },
+                    onOpenPosts: {
+                        categoryPath = categoryPath + [.posts]
                     }
                 )
                 .navigationDestination(for: Route.self) { destination($0) }
@@ -87,9 +90,9 @@ struct RootTabView: View {
         case .settings:
             SettingsView(deps: deps)
         case .posts:
-            PostsView()
+            PostsView(deps: deps)
         case .post(let id):
-            PostDetailView(id: id)
+            PostDetailView(id: id, deps: deps)
         }
     }
 }

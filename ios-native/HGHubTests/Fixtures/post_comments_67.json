@@ -1,0 +1,38 @@
+{
+  "items": [
+    {
+      "avatar": "",
+      "avatar_color": "#9B5FC7",
+      "created_at": "2026-09-09 00:34:32",
+      "id": 126,
+      "is_pinned": false,
+      "like_count": 6,
+      "liked": false,
+      "nickname": "sbmgly",
+      "reply_id": 0,
+      "reply_list": [],
+      "text": "骚货",
+      "user_id": 183055
+    },
+    {
+      "avatar": "",
+      "avatar_color": "#8C8C8C",
+      "created_at": "2026-09-06 14:55:46",
+      "id": 117,
+      "is_pinned": false,
+      "like_count": 8,
+      "liked": false,
+      "nickname": "wei12345",
+      "reply_id": 0,
+      "reply_list": [],
+      "text": "这剧情刺激",
+      "user_id": 176647
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "pages": 1,
+    "size": 5,
+    "total": 2
+  }
+}

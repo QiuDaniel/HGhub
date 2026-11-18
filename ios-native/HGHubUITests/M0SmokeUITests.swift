@@ -291,6 +291,52 @@ final class M0SmokeUITests: XCTestCase {
         XCTAssertGreaterThan(probes.count, 2, "线路页应加载固定线路和镜像线路")
     }
 
+    func testPostsListAndDetail() {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.tabBars.buttons["分类"].tap()
+        let posts = app.buttons["categoryPosts"]
+        XCTAssertTrue(posts.waitForExistence(timeout: 30), "分类页应有吃瓜入口")
+        posts.tap()
+        XCTAssertTrue(app.navigationBars["吃瓜"].waitForExistence(timeout: 10))
+
+        let card = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'postCard_'")
+        ).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 30), "吃瓜列表应加载")
+        card.tap()
+        XCTAssertTrue(app.navigationBars["吃瓜详情"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["postLike"].exists)
+        XCTAssertTrue(app.buttons["postCollect"].exists)
+        XCTAssertTrue(app.textViews["postHTML"].waitForExistence(timeout: 10), "正文应渲染为 UITextView")
+
+        app.buttons["postLike"].tap()
+        XCTAssertTrue(app.navigationBars["登录"].waitForExistence(timeout: 10), "未登录帖子点赞应先弹登录")
+    }
+
+    func testPostCommentsLoginGate() {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.tabBars.buttons["分类"].tap()
+        app.buttons["categoryPosts"].tap()
+        XCTAssertTrue(app.navigationBars["吃瓜"].waitForExistence(timeout: 10))
+        let card = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'postCard_'")
+        ).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 30))
+        card.tap()
+        XCTAssertTrue(app.navigationBars["吃瓜详情"].waitForExistence(timeout: 10))
+
+        app.buttons["postComments"].tap()
+        XCTAssertTrue(app.navigationBars["评论"].waitForExistence(timeout: 10))
+        let gate = app.buttons["postCommentLogin"]
+        XCTAssertTrue(gate.waitForExistence(timeout: 5))
+        gate.tap()
+        XCTAssertTrue(app.navigationBars["登录"].waitForExistence(timeout: 10))
+    }
+
     func testSettingsNetworkDiagnostics() {
         let app = XCUIApplication()
         app.launch()
