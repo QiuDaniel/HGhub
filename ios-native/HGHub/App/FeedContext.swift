@@ -64,7 +64,8 @@ extension VideoCard {
         cover: String? = nil,
         episodeCount: Int? = nil,
         score: Double? = nil,
-        likeCount: Int? = nil
+        likeCount: Int? = nil,
+        author: Author? = nil
     ) {
         self.id = id
         self.title = title
@@ -81,7 +82,7 @@ extension VideoCard {
         self.commentCount = nil
         self.isFinished = nil
         self.isOriginal = nil
-        self.author = nil
+        self.author = author
     }
 
     var episodeTotal: Int {

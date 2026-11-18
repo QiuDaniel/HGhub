@@ -91,6 +91,52 @@ final class M0SmokeUITests: XCTestCase {
         XCTAssertFalse(app.buttons["playerRetry"].exists, "切条后播放不应进入错误态")
     }
 
+    func testDetailCommentsAndLoginGate() {
+        let app = XCUIApplication()
+        app.launch()
+
+        let card = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'videoCard_'")
+        ).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 30))
+        card.tap()
+        XCTAssertTrue(app.buttons["feedClose"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["playerDetail"].waitForExistence(timeout: 10))
+
+        app.buttons["playerDetail"].tap()
+        XCTAssertTrue(app.navigationBars["详情"].waitForExistence(timeout: 10), "应打开详情面板")
+        XCTAssertTrue(app.staticTexts["简介"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["已完结"].waitForExistence(timeout: 10), "详情接口应加载出连载状态")
+        app.buttons["关闭"].tap()
+
+        XCTAssertTrue(app.buttons["playerComments"].waitForExistence(timeout: 5))
+        app.buttons["playerComments"].tap()
+        XCTAssertTrue(app.navigationBars["评论"].waitForExistence(timeout: 10), "应打开评论面板")
+        let total = app.staticTexts.matching(
+            NSPredicate(format: "label ENDSWITH '条评论'")
+        ).firstMatch
+        XCTAssertTrue(total.waitForExistence(timeout: 15), "评论列表应加载")
+        let loginGate = app.buttons["commentLogin"]
+        XCTAssertTrue(loginGate.waitForExistence(timeout: 5), "未登录时评论输入应显示登录入口")
+        loginGate.tap()
+
+        XCTAssertTrue(app.navigationBars["登录"].waitForExistence(timeout: 10), "评论登录拦截应弹登录")
+    }
+
+    func testPlayerLikeRequiresLogin() {
+        let app = XCUIApplication()
+        app.launch()
+
+        let card = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'videoCard_'")
+        ).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 30))
+        card.tap()
+        XCTAssertTrue(app.buttons["playerLike"].waitForExistence(timeout: 10))
+        app.buttons["playerLike"].tap()
+        XCTAssertTrue(app.navigationBars["登录"].waitForExistence(timeout: 10), "未登录点赞应先弹登录")
+    }
+
     func testPlayerTapPausesAndDoubleTapLikes() {
         let app = XCUIApplication()
         app.launch()
@@ -110,11 +156,11 @@ final class M0SmokeUITests: XCTestCase {
         app.buttons["playerToggle"].tap()
         XCTAssertTrue(app.buttons["playerToggle"].waitForNonExistence(timeout: 5), "再次点击应继续播放")
 
-        let like = app.buttons["playerLike"]
-        let before = like.label
         center.doubleTap()
-        XCTAssertTrue(like.waitForExistence(timeout: 3))
-        XCTAssertTrue(like.label != before, "双击应切换喜欢状态")
+        XCTAssertTrue(
+            app.navigationBars["登录"].waitForExistence(timeout: 10),
+            "未登录双击喜欢应先弹登录"
+        )
     }
 
     func testResumeFromHistory() {
@@ -202,11 +248,14 @@ final class M0SmokeUITests: XCTestCase {
         app.launch()
 
         app.tabBars.buttons["我的"].tap()
-        let login = app.buttons["登录 / 注册"]
+        let login = app.buttons["profileLogin"]
         XCTAssertTrue(login.waitForExistence(timeout: 10), "未登录时我的页应有登录入口")
         login.tap()
 
         XCTAssertTrue(app.navigationBars["登录"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.textFields["loginUsername"].exists)
+        XCTAssertTrue(app.secureTextFields["loginPassword"].exists)
+        XCTAssertFalse(app.buttons["loginSubmit"].isEnabled, "空表单登录按钮应禁用")
         XCTAssertTrue(app.buttons["关闭"].exists)
     }
 

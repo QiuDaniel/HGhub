@@ -32,6 +32,13 @@ final class AppState {
         session = nil
     }
 
+    /// 返回 true 表示已登录；未登录时只弹登录，不预发请求。
+    func requireLogin() -> Bool {
+        guard session == nil else { return true }
+        loginPresented = true
+        return false
+    }
+
     func showToast(_ message: String, icon: Toast.Icon = .info) {
         let next = Toast(message: message, icon: icon)
         toast = next

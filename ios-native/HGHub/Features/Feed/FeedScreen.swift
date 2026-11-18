@@ -10,6 +10,7 @@ struct FeedScreen: View {
 
     @State private var model: FeedViewModel
     @State private var player: PlayerCoordinator
+    @State private var interactions: FeedInteractionModel
     @State private var currentEp: Int
     @State private var didStart = false
     @State private var sheet: FeedSheet?
@@ -28,6 +29,15 @@ struct FeedScreen: View {
         _model = State(initialValue: FeedViewModel(context: context, videos: deps.videos))
         _player = State(initialValue: PlayerCoordinator(videos: deps.videos))
         _currentEp = State(initialValue: max(context.startEp ?? 1, 1))
+        let firstCard = context.cards.indices.contains(context.index) ? context.cards[context.index] : nil
+        _interactions = State(
+            initialValue: FeedInteractionModel(
+                card: firstCard,
+                ep: max(context.startEp ?? 1, 1),
+                social: deps.social,
+                library: deps.library
+            )
+        )
     }
 
     private var card: VideoCard? { model.current }
@@ -103,7 +113,8 @@ struct FeedScreen: View {
                         state: player.state,
                         card: card,
                         episode: currentEp,
-                        isLiked: deps.library.isLiked(card.id),
+                        isLiked: interactions.liked,
+                        likeCount: interactions.likeCount,
                         isFullscreen: false,
                         scrubPreview: scrubPreview,
                         edgeHUD: edgeHUD,
@@ -111,6 +122,7 @@ struct FeedScreen: View {
                         onTogglePlay: { player.togglePlay() },
                         onLike: { toggleLike() },
                         onComments: { sheet = .comments },
+                        onDetail: { sheet = .detail },
                         onEpisodes: { sheet = .episodes },
                         onFullscreen: { isFullscreen = true },
                         onMute: { player.setMuted(!player.state.isMuted) },
@@ -161,10 +173,35 @@ struct FeedScreen: View {
                 }
             case .comments:
                 if let card {
-                    CommentsSheet(card: card)
+                    CommentsSheet(
+                        card: card,
+                        ep: currentEp,
+                        deps: deps,
+                        onRequireLogin: requestLogin,
+                        onSent: { interactions.noteCommentSent() }
+                    )
                 }
+            case .detail:
+                DetailSheet(
+                    interactions: interactions,
+                    deps: deps,
+                    onSelectEpisode: { ep in
+                        changeEpisode(ep)
+                    },
+                    onRequireLogin: requestLogin
+                )
             }
         }
+        .sheet(isPresented: loginBinding) {
+            LoginSheet(deps: deps)
+        }
+    }
+
+    private var loginBinding: Binding<Bool> {
+        Binding(
+            get: { app.loginPresented },
+            set: { app.loginPresented = $0 }
+        )
     }
 
     private var emptyState: some View {
@@ -185,6 +222,7 @@ struct FeedScreen: View {
         let time = max(context.startTime ?? history?.t ?? 0, 0)
         currentEp = ep
         lastRecordedTime = time
+        interactions.configure(card: card, ep: ep)
         player.play(videoID: card.id, ep: ep, startTime: time)
         preloadNext()
     }
@@ -198,6 +236,7 @@ struct FeedScreen: View {
         let time = max(history?.t ?? 0, 0)
         currentEp = ep
         lastRecordedTime = time
+        interactions.configure(card: card, ep: ep)
         player.play(videoID: card.id, ep: ep, startTime: time)
         preloadNext()
     }
@@ -208,6 +247,7 @@ struct FeedScreen: View {
         recordProgress(force: true)
         currentEp = next
         lastRecordedTime = 0
+        interactions.configure(card: card, ep: next)
         player.play(videoID: card.id, ep: next, startTime: 0)
         preloadNext()
     }
@@ -231,9 +271,45 @@ struct FeedScreen: View {
     }
 
     private func toggleLike() {
-        guard let card else { return }
-        let liked = deps.library.toggleLike(card.id)
-        app.showToast(liked ? "已喜欢" : "已取消喜欢", icon: .heart)
+        guard requireLogin() else { return }
+        Task {
+            let outcome = await interactions.toggleLike()
+            await handle(outcome, success: interactions.liked ? "已点赞" : "已取消点赞")
+        }
+    }
+
+    private func requireLogin() -> Bool {
+        if app.session != nil { return true }
+        requestLogin()
+        return false
+    }
+
+    private func requestLogin() {
+        if sheet != nil {
+            // 401 可能已经把 loginPresented 置 true；先归零，等当前 sheet 退场再弹。
+            app.loginPresented = false
+            sheet = nil
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(300))
+                app.loginPresented = true
+            }
+        } else {
+            app.loginPresented = true
+        }
+    }
+
+    private func handle(_ outcome: InteractionOutcome, success: String) async {
+        switch outcome {
+        case .ok:
+            app.showToast(success, icon: .heart)
+        case .needsLogin:
+            requestLogin()
+        case .unauthorized:
+            await deps.handleUnauthorized(app: app)
+            requestLogin()
+        case .failed(let message):
+            app.showToast(message)
+        }
     }
 
     private func adjustEdge(_ delta: Double) {
@@ -269,6 +345,7 @@ struct FeedScreen: View {
 private enum FeedSheet: String, Identifiable {
     case episodes
     case comments
+    case detail
 
     var id: String { rawValue }
 }

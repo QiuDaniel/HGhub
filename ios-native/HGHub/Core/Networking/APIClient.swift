@@ -50,6 +50,24 @@ actor APIClient {
         try await edge(method: "DELETE", path: path, body: nil, as: type)
     }
 
+    func post<T: Decodable & Sendable>(_ path: String, body: some Encodable, as type: T.Type) async throws -> T {
+        let data = try encoder.encode(body)
+        return try await post(path, json: data, as: type)
+    }
+
+    /// 只关心成功/业务错误、不关心 data 的写操作（点赞、收藏、关注、退出、发评论）。
+    func postAction(_ path: String) async throws {
+        try await action(method: "POST", path: path, body: nil)
+    }
+
+    func postAction(_ path: String, body: some Encodable) async throws {
+        try await action(method: "POST", path: path, body: try encoder.encode(body))
+    }
+
+    func deleteAction(_ path: String) async throws {
+        try await action(method: "DELETE", path: path, body: nil)
+    }
+
     /// 播放接口：直连、body 必须是 `{}`、响应仍是 `{status,data}`。
     /// 非 401 的失败按契约回退到老 `GET /api/videos/{id}/play?ep=...`。
     func playback(id: Int, ep: Int) async throws -> PlayInfo {
@@ -132,6 +150,29 @@ actor APIClient {
             contentType: "application/json"
         )
         return try decodeEdge(data, as: type)
+    }
+
+    private func action(method: String, path: String, body: Data?) async throws {
+        let envelope = EdgeEnvelope(method: method, path: path, body: body)
+        let encoded = try encoder.encode(envelope)
+        let data = try await send(
+            path: "/api/edge/request",
+            method: "POST",
+            body: encoded,
+            contentType: "application/json"
+        )
+        guard !data.isEmpty else { return }
+        let status: EdgeStatus
+        do {
+            status = try decoder.decode(EdgeStatus.self, from: data)
+        } catch {
+            throw APIError.decoding(String(decoding: data.prefix(200), as: UTF8.self))
+        }
+        if status.status == 1 { return }
+        if let message = status.msg?.trimmingCharacters(in: .whitespacesAndNewlines), !message.isEmpty {
+            throw APIError.business(message)
+        }
+        throw APIError.business("接口返回失败")
     }
 
     private func decodeEdge<T: Decodable>(_ data: Data, as type: T.Type) throws -> T {
@@ -233,6 +274,11 @@ actor APIClient {
 }
 
 // MARK: - 上游响应形状
+
+private struct EdgeStatus: Decodable {
+    let status: Int?
+    let msg: String?
+}
 
 private struct EdgeResponse<T: Decodable>: Decodable {
     let status: Int?

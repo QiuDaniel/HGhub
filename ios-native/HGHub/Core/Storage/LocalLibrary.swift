@@ -56,6 +56,36 @@ final class LocalLibrary {
         return favorites.contains(id)
     }
 
+    func setLiked(_ id: Int, _ liked: Bool) {
+        if liked {
+            guard !likes.contains(id) else { return }
+            likes.insert(id, at: 0)
+        } else {
+            likes.removeAll { $0 == id }
+        }
+        Defaults[likesKey] = likes
+    }
+
+    func setFavorite(_ id: Int, _ favorite: Bool) {
+        if favorite {
+            guard !favorites.contains(id) else { return }
+            favorites.insert(id, at: 0)
+        } else {
+            favorites.removeAll { $0 == id }
+        }
+        Defaults[favoritesKey] = favorites
+    }
+
+    func setFollowing(_ uid: Int, _ following: Bool) {
+        if following {
+            guard !follows.contains(uid) else { return }
+            follows.insert(uid, at: 0)
+        } else {
+            follows.removeAll { $0 == uid }
+        }
+        Defaults[followsKey] = follows
+    }
+
     @discardableResult
     func toggleLike(_ id: Int) -> Bool {
         if let index = likes.firstIndex(of: id) {

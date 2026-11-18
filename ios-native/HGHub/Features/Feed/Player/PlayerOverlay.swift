@@ -5,6 +5,7 @@ struct PlayerOverlay: View {
     let card: VideoCard
     let episode: Int
     let isLiked: Bool
+    let likeCount: Int
     let isFullscreen: Bool
     let scrubPreview: Double?
     let edgeHUD: String?
@@ -13,6 +14,7 @@ struct PlayerOverlay: View {
     var onTogglePlay: () -> Void
     var onLike: () -> Void
     var onComments: () -> Void
+    var onDetail: () -> Void
     var onEpisodes: () -> Void
     var onFullscreen: () -> Void
     var onMute: () -> Void
@@ -113,7 +115,7 @@ struct PlayerOverlay: View {
             sideButton(
                 icon: isLiked ? "heart.fill" : "heart",
                 tint: isLiked ? Color.hgPrimary : .white,
-                label: compact(card.likeCount ?? 0),
+                label: compact(likeCount),
                 action: onLike
             )
             .accessibilityLabel(isLiked ? "取消喜欢" : "喜欢")
@@ -189,6 +191,16 @@ struct PlayerOverlay: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("playerEpisodeBadge")
+
+                Button(action: onDetail) {
+                    Text("详情")
+                        .font(.caption2.weight(.semibold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.white.opacity(0.16), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("playerDetail")
             }
 
             if let description = card.description, !description.isEmpty {

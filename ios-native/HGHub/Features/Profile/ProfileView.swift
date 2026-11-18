@@ -23,10 +23,18 @@ struct ProfileView: View {
 
             if app.session == nil {
                 Section {
-                    Button("登录 / 注册") {
+                    Button("登录") {
                         app.loginPresented = true
                     }
                     .buttonStyle(HGPrimaryButtonStyle())
+                    .accessibilityIdentifier("profileLogin")
+                }
+            } else {
+                Section {
+                    Button("退出登录", role: .destructive) {
+                        logout()
+                    }
+                    .accessibilityIdentifier("profileLogout")
                 }
             }
 
@@ -45,13 +53,23 @@ struct ProfileView: View {
         .navigationTitle("我的")
     }
 
+    private func logout() {
+        Task {
+            try? await deps.account.logout()
+            deps.session.clear()
+            await deps.api.setToken(nil)
+            app.signOut()
+            app.showToast("已退出登录", icon: .ok)
+        }
+    }
+
     private var displayName: String {
         app.session?.user?.nickname ?? "未登录"
     }
 
     private var subtitle: String {
         guard let session = app.session else {
-            return "浏览与本地收藏可用；登录在 M3 接入"
+            return "登录后可同步点赞、收藏与评论"
         }
         let username = session.user?.username ?? ""
         return username.isEmpty ? "已登录" : "@\(username)"

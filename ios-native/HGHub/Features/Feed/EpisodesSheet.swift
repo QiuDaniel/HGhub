@@ -47,27 +47,3 @@ struct EpisodesSheet: View {
         .presentationDetents([.medium, .large])
     }
 }
-
-struct CommentsSheet: View {
-    let card: VideoCard
-
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            HGEmptyState(
-                icon: "text.bubble",
-                title: "评论",
-                message: "共 \(card.commentCount ?? 0) 条 · M3 接入评论列表与发送"
-            )
-            .navigationTitle("评论")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("关闭") { dismiss() }
-                }
-            }
-        }
-        .presentationDetents([.medium])
-    }
-}

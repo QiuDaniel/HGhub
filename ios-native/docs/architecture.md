@@ -232,6 +232,15 @@ enum Route: Hashable {
 
 M2 初版实现：横向 `|vx| > 1.15|vy|`、左右边缘各 20% 才进入亮度/音量、长按 0.4s；专用 `UIPanGestureRecognizer` 通过 `collectionView.panGestureRecognizer.require(toFail:)` 先决定方向，中心纵向失败后交给 pager。阈值仍需真机继续调，后续修改同步到本节。
 
+### 7.6 详情 / 互动 / 评论（M3）
+
+- 模型：`VideoDetail`（详情 + episodes + counts + interaction）、`Comment` / `CommentPage`、`LoginResponse`。
+- 仓库：`AccountRepository`（login/logout/me）、`VideoSocialRepository`（detail/comments/sendComment/like/collect/follow）；`APIClient` 增加 typed post 与“只关心 status”的 action。
+- 共享状态：`FeedInteractionModel` 同时服务 Feed overlay 与详情面板，避免两处点赞/收藏状态分叉；乐观更新 + 失败回滚；未登录先弹登录，不预发请求；401 由 `AppDependencies.handleUnauthorized` 统一清 Keychain/token 并弹登录。
+- 评论：`CommentsViewModel` 分页/去重；`CommentsSheet` 半屏/全屏、底部输入框用 `safeAreaInset` 避开键盘；发送成功 toast「审核通过后展示」并重拉第 1 页；楼中楼当前只展示首条。
+- 分享：详情面板用系统 `ShareLink`，链接为 `{base}/video/{id}/`。
+- 登录：`LoginSheet` 调真实 `loginByPassword`，token 写 Valet 并注入 `APIClient`；退出即使接口失败也清本地。
+
 ## 8. 网络层
 
 ### 8.1 APIClient

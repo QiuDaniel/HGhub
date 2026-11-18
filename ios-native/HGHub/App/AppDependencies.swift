@@ -5,6 +5,8 @@ import Foundation
 final class AppDependencies {
     let api: APIClient
     let videos: VideoRepository
+    let account: AccountRepository
+    let social: VideoSocialRepository
     let session: SessionStore
     let library: LocalLibrary
     let lines: LineStore
@@ -15,6 +17,8 @@ final class AppDependencies {
         let api = APIClient()
         self.api = api
         self.videos = LiveVideoRepository(api: api)
+        self.account = LiveAccountRepository(api: api)
+        self.social = LiveVideoSocialRepository(api: api)
         self.session = SessionStore()
         self.library = LocalLibrary()
         self.lines = LineStore()
@@ -28,5 +32,13 @@ final class AppDependencies {
             app.apply(session: session)
             await api.setToken(session.token)
         }
+    }
+
+    /// 401：清 Keychain、清 APIClient token、回到未登录态并弹一次登录。
+    func handleUnauthorized(app: AppState) async {
+        await api.setToken(nil)
+        session.clear()
+        app.signOut()
+        app.loginPresented = true
     }
 }

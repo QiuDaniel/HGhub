@@ -53,13 +53,20 @@ struct RootTabView: View {
         .task {
             await deps.bootstrap(app: app)
         }
-        .sheet(isPresented: $app.loginPresented) {
-            LoginSheet()
+        .sheet(isPresented: loginBinding) {
+            LoginSheet(deps: deps)
         }
         .fullScreenCover(item: $app.feed) { context in
             FeedScreen(context: context, deps: deps)
                 .environment(app)
         }
+    }
+
+    private var loginBinding: Binding<Bool> {
+        Binding(
+            get: { app.loginPresented && app.feed == nil },
+            set: { app.loginPresented = $0 }
+        )
     }
 
     @ViewBuilder

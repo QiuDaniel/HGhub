@@ -1,7 +1,7 @@
 # 接口契约 · ios-native
 
-> 版本：v0.1（M0 基线）
-> 更新：2026-11-17
+> 版本：v0.2（M3 基线）
+> 更新：2026-11-18
 > 来源：以现有 Rust 实现 [net.rs](../src-tauri/src/net.rs)、[api.rs](../src-tauri/src/api.rs)、[media.rs](../src-tauri/src/media.rs)、[lines.rs](../src-tauri/src/lines.rs) 与 [AIRead.md](../AIRead.md) 为准。
 > 目的：Swift 端按这份契约重写；**契约变了先改这里，再改代码**。
 
@@ -225,6 +225,7 @@ Content-Type: application/json
 ```
 
 > 老接口的 `video_url` 可能是空串；播放地址以 playback 为准。
+> 实测 detail 的 `duration` 可能是字符串（如 `"820"`），Swift 用 `FlexibleDouble` 兼容数字/字符串。
 
 ### 5.4 `PlayInfo`
 
@@ -249,13 +250,15 @@ Content-Type: application/json
   "reset": false,
   "items": [{
     "id": 1, "user_id": 2, "nickname": "…", "avatar": "…", "avatar_color": "#…",
-    "text": "…", "time": "…", "created_at": "…",
+    "content": "…", "text": "…", "time": "…", "created_at": "…",
     "like_count": 0, "liked": false, "reply_count": 0, "reply_id": 0,
     "reply_list": [], "is_pinned": false, "ip_region": "…"
   }],
   "pagination": { "page": 1, "pages": 1, "size": 20, "total": 0 }
 }
 ```
+
+> 实测评论正文同时存在 `content` 与 `text`，两者通常相同；Swift 取 `content` 优先、`text` 兜底。`reply_list` 为楼中楼，首条可直接展示；发送回复时 `reply_id` 必须用 snake_case。
 
 ### 5.6 `Post` / `User`
 
@@ -308,8 +311,8 @@ Swift 侧用 `CryptoSwift` 的 `AES(key:blockMode: CBC(iv:), padding: .noPadding
 |---|---|---|---|
 | `feed_page1.json` | `/api/videos?page=1&size=10` | Feed 解码（10 条 / 179 页） | ✅ 已落盘，单测覆盖 |
 | `playback_117_3.json` | playback 117/3 | Playback 归一化（streams.main） | ✅ 已落盘 |
-| `video_detail_117.json` | `/api/videos/117` | Detail 解码 | 待 M3 |
-| `comments_117_3.json` | comments 117/3 | 评论解码 | 待 M3 |
+| `video_detail_117.json` | `/api/videos/117` | Detail 解码（42 集 / 字符串 duration） | ✅ 已落盘，单测覆盖 |
+| `comments_117_3.json` | comments 117/3 | 评论解码（5 条 / 54 总 / 楼中楼） | ✅ 已落盘，单测覆盖 |
 | `posts_page1.json` | `/api/posts?page=1` | 吃瓜列表 | 待 M6 |
 | `post_detail_1.json` | `/api/posts/1` | 正文 HTML | 待 M6 |
 | `line_state.json` | 本地 | 线路 UI | 待 M5 |
@@ -324,6 +327,7 @@ Swift 侧用 `CryptoSwift` 的 `AES(key:blockMode: CBC(iv:), padding: .noPadding
 | 日期 | 变更 | 影响 |
 |---|---|---|
 | 2026-11-17 | 播放改 `POST /api/videos/{id}/episodes/{ep}/playback`，body `{}`，响应 `streams.main` | 老 `video_url` 为空串；必须换接口 |
+| 2026-11-18 | Detail 的 `duration` 为字符串；评论正文同时有 `content` / `text` | 模型兼容字符串数字；评论取 `content` 优先 |
 | 2026-11-17 | 分类改数字 `cate_id`；`/api/videos/category/{slug}` 410 | 频道写 24/25/26/27；空频道隐藏 |
 | 2026-11-17 | iOS WebView 的 `<video>` 不经过 WKURLSchemeHandler | 原生工程无此问题；但证明 HLS 可直连 |
 | 持续 | CDN 域名漂移 | 线路切换 + 不硬编码域名 |
