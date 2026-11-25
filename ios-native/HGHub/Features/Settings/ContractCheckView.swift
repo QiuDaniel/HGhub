@@ -29,7 +29,7 @@ final class ContractCheckModel {
     }
 }
 
-/// M0 冒烟页：只验证「信封 / 解析 / 播放地址」链路，不承载业务 UI。
+/// M0 冒烟页：只验证「直连 API / 解析 / 播放地址」链路，不承载业务 UI。
 /// 入口在 Debug 首页；Release 下不显示按钮。
 struct ContractCheckView: View {
     let api: APIClient

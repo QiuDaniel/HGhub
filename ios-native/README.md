@@ -19,7 +19,7 @@ HGhub 的**纯原生 iOS 客户端**（SwiftUI + AVPlayer）。它与仓库根�
 | [需求规格](docs/requirements.md) | 目标/非目标、功能需求 ID、非功能需求、验收标准 | 接需求、判断“要不要做” |
 | [架构设计](docs/architecture.md) | 分层、模块职责、数据流、导航、播放器、网络、并发、测试 | 改代码前 |
 | [开发计划](docs/development-plan.md) | M0–M7 里程碑、任务清单、质量门禁、风险、进度 | 每次开工前 / 收工后 |
-| [接口契约](docs/api-contract.md) | 边缘信封、鉴权、端点、播放例外、封面加密、线路 | 调接口、排查“打不开/不能播” |
+| [接口契约](docs/api-contract.md) | 直连 API、鉴权、端点、播放、封面加密、线路 | 调接口、排查“打不开/不能播” |
 | [决策记录](docs/decisions.md) | ADR：为什么原生、为什么不用 Tauri 内核、为什么选这些库 | 想推翻某个决定时 |
 | [安装与签名](docs/install.md) | Xcode 真机安装、免费签名 7 天、代理与 PiP/后台音频 | 要装到自己设备时 |
 | [M7 回归清单](docs/regression.md) | 自动化/真机验收项、已知边界 | 发布前逐项打勾 |
@@ -64,6 +64,8 @@ xcodebuild -project HGHub.xcodeproj -scheme HGHub \
 
 **M7 已实现（待真机验收）**：PiP（`AVPictureInPictureController`）、AirPlay（`AVRoutePickerView`）、锁屏/控制中心（`MPRemoteCommandCenter` + Now Playing）、后台音频（`UIBackgroundModes=audio`）、播放器默认静音（顶部静音按钮切换，状态持久化）、封面降采样、无障碍标签、Info.plist/图标/版本检查；安装步骤见 [安装与签名](docs/install.md)。**44 个单测 + 23 个 UI 测试**通过；真机手势/PiP/后台/签名需按安装文档验收。
 
+**2026-11-26 接口迁移**：上游 `POST /api/edge/request` 已返回 503「接口已停用」，客户端改为直连 `{base}/api/**`，兼容 `{data}` 与 `{status,data}` 响应；已用真实 Feed/Playback/搜索/分类/榜单/帖子/评论/设置回归。
+
 **网络说明**：iOS 的 `URLSession`/CFNetwork 自动读取系统代理；模拟器复用 macOS 系统代理（当前 `127.0.0.1:7890`），真机需在 Wi-Fi 设置里把 HTTP 代理指向 Mac 的局域网 IP。`curl` 不读系统代理，裸 `curl` 会误判“站点不可达”，排查时用 `curl -x http://127.0.0.1:7890 ...`。详见 [接口契约 § 代理](docs/api-contract.md#11-代理与网络排查)。
 
 ## 目录
@@ -86,7 +88,7 @@ ios-native/
 
 ## 与 Tauri 版的关系
 
-- **协议层照抄**：边缘信封、播放接口、封面 AES、线路规则都以 Tauri 版为参照实现（见 [接口契约](docs/api-contract.md)）。
+- **协议层照抄**：直连 API、播放接口、封面 AES、线路规则以 Tauri 版与上游实测为参照（见 [接口契约](docs/api-contract.md)）。
 - **代码不复用**：不搬 Rust、不搬 React；iOS 端是独立的 Swift 实现。
 - **Tauri 版仍是参照实现**：行为对齐时，以根目录 `src/`、`src-tauri/` 的现有实现和 [AIRead.md](../AIRead.md) 为准。
 - **互不影响**：原生工程新增目录，Tauri 的 `pnpm build` / `tauri build` 流程不变。

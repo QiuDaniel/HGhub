@@ -1,7 +1,7 @@
 # 接口契约 · ios-native
 
-> 版本：v0.5（M6 基线）
-> 更新：2026-11-18
+> 版本：v0.6（2026-11-25 直连迁移）
+> 更新：2026-11-26
 > 来源：以现有 Rust 实现 [net.rs](../src-tauri/src/net.rs)、[api.rs](../src-tauri/src/api.rs)、[media.rs](../src-tauri/src/media.rs)、[lines.rs](../src-tauri/src/lines.rs) 与 [AIRead.md](../AIRead.md) 为准。
 > 目的：Swift 端按这份契约重写；**契约变了先改这里，再改代码**。
 
@@ -25,53 +25,51 @@
 
 ---
 
-## 2. 边缘信封（所有 `/api/**` 业务请求）
+## 2. 直连 API（所有 `/api/**` 业务请求）
+
+> **2026-11-25 上游变更**：`POST /api/edge/request` 返回 HTTP 503 / `{"status":0,"msg":"接口已停用"}`。
+> 客户端改为直接请求真实接口：`{base}/api/...`，不再经过边缘信封。
 
 ### 2.1 请求
 
 ```http
-POST {base}/api/edge/request
+GET {base}/api/videos?page=1&size=10
 Accept: application/json
 Referer: {base}/
 Authorization: Bearer {token}        # 可选；登录态才带
-Content-Type: application/json
-
-{
-  "method": "GET",
-  "path": "/api/videos?page=1&size=10",
-  "body": "",
-  "content_type": ""
-}
 ```
 
-- `body` 是真实请求体的 **base64(JSON UTF-8)**；GET/DELETE 无 body 时为空串，`content_type` 为空串。
-- 有 body 时 `content_type` 为 `application/json`。
-- `path` 包含 query string，且必须与真实接口一致。
-- `Referer` 固定为 `{base}/`（上游可能校验）。
-
-POST 示例：
-
-```json
-{
-  "method": "POST",
-  "path": "/api/account/loginByPassword",
-  "body": "eyJ1c2VybmFtZSI6Ii4uLiIsInBhc3N3b3JkIjoiLi4uIn0=",
-  "content_type": "application/json"
-}
-```
+POST/PUT/DELETE 的 body 直接放在 HTTP body 中，`Content-Type: application/json`；不再 base64 包裹。
 
 ### 2.2 响应
+
+成功响应可能是：
+
+```json
+{ "data": { } }
+```
+
+也可能是：
 
 ```json
 { "status": 1, "data": { } }
 ```
 
-- `status == 1`：取 `data` 返回给上层。
-- `status == 0`：抛业务错误，`msg` 即用户文案（缺省「接口返回失败」）。
+统一规则：
+
+- 有 `data`：取 `data` 返回给上层。
+- `status == 1`：成功（`data` 可缺省）。
+- `status == 0`：抛业务错误，`msg` 即用户文案（缺省「接口返回失败」）；即使 `data` 是空数组也先判错。
 - HTTP 401/403：抛 `unauthorized`（上层清会话、弹登录）。
 - 其它非 2xx：抛 `http(status)`。
-- 空响应体：返回 `null`（调用方按空处理）。
-- 非 JSON / 解码失败：抛 `decoding`，附前 160 字符便于排查。
+- 空响应体：返回空（调用方按空处理）。
+- 非 JSON / 解码失败：抛 `decoding`，附前 200 字符便于排查。
+
+登录失败示例（HTTP 200）：
+
+```json
+{"data":[],"status":0,"msg":"请输入账号和密码","req_time":...}
+```
 
 ### 2.3 重试
 
@@ -81,7 +79,7 @@ POST 示例：
 
 ---
 
-## 3. 播放接口（唯一不走信封的例外）
+## 3. 播放接口（直连）
 
 ```http
 POST {base}/api/videos/{id}/episodes/{ep}/playback
@@ -93,13 +91,12 @@ Content-Type: application/json
 {}
 ```
 
-> **body 必须是空 JSON `{}`**。带 id/ep 会返回「播放参数无效」；走 `/api/edge/request` 信封会返回 `{"error":"请求无法处理"}`（2026-11-17 实测）。
+> **body 必须是空 JSON `{}`**。带 id/ep 会返回「播放参数无效」。
 
-响应（外层含 `status/data`，与信封不同，需调用方自己解包）：
+响应（2026-11-25 起为 `{data}`，兼容旧 `{status,data}`）：
 
 ```json
 {
-  "status": 1,
   "data": {
     "streams": {
       "main": "https://.../xxx.m3u8?auth_key=...",
@@ -122,13 +119,13 @@ Content-Type: application/json
 | `title` | `第{ep}集` |
 | `duration` | `0`（接口不一定给，播放器以 AVPlayer 为准） |
 
-**兜底**：playback 失败且错误不是 401 时，尝试老接口 `GET /api/videos/{id}/play?ep={ep}&page_texts=0`（走信封）；仍失败则返回 playback 的原始错误。
+**兜底**：playback 失败且错误不是 401 时，尝试老接口 `GET /api/videos/{id}/play?ep={ep}&page_texts=0`（直连）；仍失败则返回 playback 的原始错误。
 
 ---
 
 ## 4. 端点清单
 
-> 除 playback 外，全部走第 2 节信封。`auth` 列：`-` 匿名可调；`✓` 必须登录。
+> 除 playback 外，全部走第 2 节直连规则。`auth` 列：`-` 匿名可调；`✓` 必须登录。
 
 | # | 用途 | Method | Path | Body | auth |
 |---|---|---|---|---|---|
@@ -333,6 +330,7 @@ Swift 侧用 `CryptoSwift` 的 `AES(key:blockMode: CBC(iv:), padding: .noPadding
 | 日期 | 变更 | 影响 |
 |---|---|---|
 | 2026-11-17 | 播放改 `POST /api/videos/{id}/episodes/{ep}/playback`，body `{}`，响应 `streams.main` | 老 `video_url` 为空串；必须换接口 |
+| **2026-11-25** | **`POST /api/edge/request` 返回 503「接口已停用」；真实接口 `/api/**` 直连仍可用，响应为 `{data}`** | **APIClient 全部改直连；不再走信封** |
 | 2026-11-18 | Detail 的 `duration` 为字符串；评论正文同时有 `content` / `text` | 模型兼容字符串数字；评论取 `content` 优先 |
 | 2026-11-18 | 分类 26/27 为空；榜单 `VideoCard` 字段名为 `video_id` | 空频道隐藏；RankItem 单独建模 |
 | 2026-11-17 | 分类改数字 `cate_id`；`/api/videos/category/{slug}` 410 | 频道写 24/25/26/27；空频道隐藏 |
@@ -364,10 +362,9 @@ scutil --proxy
 # 验证上游可达（必须显式带代理）
 curl -x http://127.0.0.1:7890 -I https://huangguoai.com/
 
-# 验证 Feed 信封
-curl -x http://127.0.0.1:7890 https://huangguoai.com/api/edge/request \
-  -H 'Content-Type: application/json' -H 'Referer: https://huangguoai.com/' \
-  -d '{"method":"GET","path":"/api/videos?page=1&size=10","body":"","content_type":""}'
+# 验证 Feed 直连
+curl -x http://127.0.0.1:7890 -H 'Referer: https://huangguoai.com/' \
+  'https://huangguoai.com/api/videos?page=1&size=10'
 
 # 验证 Playback（直连、空 body）
 curl -x http://127.0.0.1:7890 \

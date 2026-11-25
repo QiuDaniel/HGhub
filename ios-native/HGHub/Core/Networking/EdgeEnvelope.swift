@@ -1,6 +1,6 @@
 import Foundation
 
-/// 上游 `/api/edge/request` 的信封。
+/// 旧 `/api/edge/request` 信封。2026-11-25 上游已停用；保留类型仅用于历史测试/兼容参考。
 ///
 /// 真实请求的 method/path/body 都塞进这个 JSON：
 /// - `body` 是 base64(JSON UTF-8)，无 body 时为空串

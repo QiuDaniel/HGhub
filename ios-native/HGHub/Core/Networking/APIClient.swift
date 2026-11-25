@@ -1,7 +1,7 @@
 import Foundation
 
 /// 网络入口。所有业务请求都走这里：
-/// - 普通接口 → `POST /api/edge/request` 信封
+/// - 普通接口 → 直连 `/api/...`（2026-11-25 上游停用 `POST /api/edge/request`）
 /// - 播放接口 → 直连 `POST /api/videos/{id}/episodes/{ep}/playback`
 ///
 /// 用 actor 保护 base / token；由 `SessionStore` / `LineStore` 在登录、切线路时注入。
@@ -39,15 +39,15 @@ actor APIClient {
     // MARK: - 业务
 
     func get<T: Decodable & Sendable>(_ path: String, as type: T.Type) async throws -> T {
-        try await edge(method: "GET", path: path, body: nil, as: type)
+        try await direct(method: "GET", path: path, body: nil, as: type)
     }
 
     func post<T: Decodable & Sendable>(_ path: String, json: Data, as type: T.Type) async throws -> T {
-        try await edge(method: "POST", path: path, body: json, as: type)
+        try await direct(method: "POST", path: path, body: json, as: type)
     }
 
     func delete<T: Decodable & Sendable>(_ path: String, as type: T.Type) async throws -> T {
-        try await edge(method: "DELETE", path: path, body: nil, as: type)
+        try await direct(method: "DELETE", path: path, body: nil, as: type)
     }
 
     func post<T: Decodable & Sendable>(_ path: String, body: some Encodable, as type: T.Type) async throws -> T {
@@ -68,7 +68,7 @@ actor APIClient {
         try await action(method: "DELETE", path: path, body: nil)
     }
 
-    /// 播放接口：直连、body 必须是 `{}`、响应仍是 `{status,data}`。
+    /// 播放接口：直连、body 必须是 `{}`。
     /// 非 401 的失败按契约回退到老 `GET /api/videos/{id}/play?ep=...`。
     func playback(id: Int, ep: Int) async throws -> PlayInfo {
         do {
@@ -90,7 +90,7 @@ actor APIClient {
             body: Data("{}".utf8),
             contentType: "application/json"
         )
-        let payload: PlaybackPayload = try decodeEdge(data, as: PlaybackPayload.self)
+        let payload: PlaybackPayload = try decodeDirect(data, as: PlaybackPayload.self)
 
         let streams = payload.streams
         let candidates = [streams?.main, streams?.hevc, streams?.preview]
@@ -133,59 +133,58 @@ actor APIClient {
         )
     }
 
-    // MARK: - 信封
+    // MARK: - 直连响应
 
-    private func edge<T: Decodable & Sendable>(
+    private func direct<T: Decodable & Sendable>(
         method: String,
         path: String,
         body: Data?,
         as type: T.Type
     ) async throws -> T {
-        let envelope = EdgeEnvelope(method: method, path: path, body: body)
-        let encoded = try encoder.encode(envelope)
         let data = try await send(
-            path: "/api/edge/request",
-            method: "POST",
-            body: encoded,
-            contentType: "application/json"
+            path: path,
+            method: method,
+            body: body,
+            contentType: body == nil ? nil : "application/json"
         )
-        return try decodeEdge(data, as: type)
+        return try decodeDirect(data, as: type)
     }
 
     private func action(method: String, path: String, body: Data?) async throws {
-        let envelope = EdgeEnvelope(method: method, path: path, body: body)
-        let encoded = try encoder.encode(envelope)
         let data = try await send(
-            path: "/api/edge/request",
-            method: "POST",
-            body: encoded,
-            contentType: "application/json"
+            path: path,
+            method: method,
+            body: body,
+            contentType: body == nil ? nil : "application/json"
         )
         guard !data.isEmpty else { return }
-        let status: EdgeStatus
+        let response: DirectActionResponse
         do {
-            status = try decoder.decode(EdgeStatus.self, from: data)
+            response = try decoder.decode(DirectActionResponse.self, from: data)
         } catch {
             throw APIError.decoding(String(decoding: data.prefix(200), as: UTF8.self))
         }
-        if status.status == 1 { return }
-        if let message = status.msg?.trimmingCharacters(in: .whitespacesAndNewlines), !message.isEmpty {
-            throw APIError.business(message)
+        if let status = response.status, status == 0 {
+            let message = response.msg?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            throw APIError.business(message.isEmpty ? "接口返回失败" : message)
         }
-        throw APIError.business("接口返回失败")
     }
 
-    private func decodeEdge<T: Decodable>(_ data: Data, as type: T.Type) throws -> T {
+    private func decodeDirect<T: Decodable>(_ data: Data, as type: T.Type) throws -> T {
         guard !data.isEmpty else {
             throw APIError.decoding("空响应")
         }
-        let response: EdgeResponse<T>
+        let response: DirectResponse<T>
         do {
-            response = try decoder.decode(EdgeResponse<T>.self, from: data)
+            response = try decoder.decode(DirectResponse<T>.self, from: data)
         } catch {
             throw APIError.decoding(String(decoding: data.prefix(200), as: UTF8.self))
         }
-        if response.status == 1, let value = response.data {
+        if let status = response.status, status == 0 {
+            let message = response.msg?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            throw APIError.business(message.isEmpty ? "接口返回失败" : message)
+        }
+        if let value = response.data {
             return value
         }
         if let message = response.msg?.trimmingCharacters(in: .whitespacesAndNewlines), !message.isEmpty {
@@ -275,12 +274,12 @@ actor APIClient {
 
 // MARK: - 上游响应形状
 
-private struct EdgeStatus: Decodable {
+private struct DirectActionResponse: Decodable {
     let status: Int?
     let msg: String?
 }
 
-private struct EdgeResponse<T: Decodable>: Decodable {
+private struct DirectResponse<T: Decodable>: Decodable {
     let status: Int?
     let msg: String?
     let data: T?

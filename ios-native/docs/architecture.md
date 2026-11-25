@@ -52,14 +52,14 @@
 |---|---|---|
 | `App/` | `HGHubApp` 入口、`AppState`（session/theme/feed/login/toast）、`RootTabView`、`Route`、`AppDependencies` 组装 | 业务请求、列表缓存 |
 | `Features/Home` | 首页 Feed 的列表加载与分页 | 播放器实现 |
-| `Features/Feed` | 全屏竖滑容器、`FeedViewModel`（详情/播放信息缓存）、`PlayerCoordinator`、播放控件、选集/评论 sheet | 直接拼信封 |
+| `Features/Feed` | 全屏竖滑容器、`FeedViewModel`（详情/播放信息缓存）、`PlayerCoordinator`、播放控件、选集/评论 sheet | 直连 API |
 | `Features/Search` | 搜索、搜索历史、榜单 | 播放 |
 | `Features/Category` | 频道列表与频道内列表 | 播放 |
 | `Features/Profile` | 资料卡、收藏、历史 | 设置实现 |
 | `Features/Settings` | 主题、线路入口、清缓存、诊断、更新 | 业务接口 |
 | `Features/Posts` | 吃瓜列表与正文 | 视频播放（复用 Feed） |
 | `Features/Auth` | 登录/注册表单与校验 | 会话持久化 |
-| `Core/Networking` | `APIClient`（actor）、边缘信封、重试、错误映射 | 页面状态 |
+| `Core/Networking` | `APIClient`（actor）、直连响应兼容、重试、错误映射 | 页面状态 |
 | `Core/Repositories` | 按领域把 API 变成强类型方法；401/字段漂移兜底 | UI |
 | `Core/Models` | Codable DTO | 业务逻辑 |
 | `Core/Session` | token（Valet）+ 用户资料 | 登录表单 |
@@ -111,7 +111,7 @@ HomeView.onAppear
   → HomeViewModel.loadNext()
     → VideoRepository.feed(page:size:)
       → APIClient.get("/api/videos?page=…&size=…")
-        → EdgeEnvelope → POST {base}/api/edge/request
+        → APIClient → {base}/api/...（2026-11-25 起直连）
       ← Paged<VideoCard>
     ← items / pagination
   → HomeViewModel.items 更新
@@ -243,7 +243,7 @@ M2 初版实现：横向 `|vx| > 1.15|vy|`、左右边缘各 20% 才进入亮度
 
 ### 7.7 搜索 / 分类 / 榜单（M4）
 
-- `VideoDiscoveryRepository`：`search`、`category`、`ranks`，由 `APIClient` 走信封。
+- `VideoDiscoveryRepository`：`search`、`category`、`ranks`，由 `APIClient` 直连。
 - `SearchViewModel`：空词不请求，提交时写 `LocalLibrary.searchHistory`；分页/去重/错误态；结果进 `FeedContext(source: "search", query:)`。
 - `CategoryViewModel`：4 个频道并发首屏（每频道 8 条），0 条频道隐藏；`ChannelViewModel` 负责频道内分页。
 - `RankViewModel`：hot/recommend/potential，前 20，不翻页；`RankItem` 单独解码 `video_id`。
@@ -294,15 +294,16 @@ actor APIClient {
 }
 ```
 
-- `get/post` 走边缘信封：`method/path/body(base64)/content_type` + `Referer` + `Bearer`。
-- `playback` 直连：`POST {base}/api/videos/{id}/episodes/{ep}/playback`，body `{}`，不走信封。
+- `get/post/delete/action` 直连真实接口：`{base}/api/...` + `Referer` + `Bearer`；2026-11-25 起上游停用边缘信封。
+- `playback` 直连：`POST {base}/api/videos/{id}/episodes/{ep}/playback`，body `{}`。
+- 响应兼容 `{data}` 与 `{status,msg,data}`；`status == 0` 抛业务错误。
 - 重试：网络错误/超时最多 3 次，350ms 递增；401/403、业务错误不重试。
 - 解码：`JSONDecoder` + `convertFromSnakeCase`；字段缺失用可选/默认值兜底。
 - 错误：`APIError { network, timeout, unauthorized, http(Int), business(String), decoding }`。
 
 ### 8.2 为什么不用 Alamofire / Moya
 
-信封不是标准 REST：真实 method/path/body 都塞进一个 POST 的 JSON 里，`status==1` 再解包。Alamofire 的收益只有重试/拦截器；Moya 的 target 抽象更不贴合“单入口”。URLSession 是系统轮子，手写的只是 30 行信封拼装，属于业务协议，不是通用能力。
+现在接口是直接 REST，但行为仍有上游特有契约：`{data}` / `{status,data}` 双形状、业务错误文案、401 统一处理、3 次重试。Alamofire 的收益只有重试/拦截器；Moya 的 target 抽象会多一层样板。URLSession 已足够，手写量集中在 `APIClient`，不是通用网络能力。
 
 ### 8.3 代理
 
@@ -384,7 +385,7 @@ HGHub/
 │  ├─ Route.swift
 │  └─ ToastCenter.swift
 ├─ Core/
-│  ├─ Networking/      # APIClient, EdgeEnvelope, APIError, Retry
+│  ├─ Networking/      # APIClient, APIError, Retry
 │  ├─ Models/          # VideoCard, Paged, Detail, PlayInfo, Comment, Post, User
 │  ├─ Repositories/    # Video/Post/Account/Line Repository
 │  ├─ Session/         # SessionStore
@@ -410,7 +411,7 @@ HGHub/
 
 | 层 | 方式 | 说明 |
 |---|---|---|
-| `APIClient` | `URLProtocol` stub + fixtures | 信封构造、`status==1` 解包、401、重试 |
+| `APIClient` | `URLProtocol` stub + fixtures | 直连 URL/body、`{data}`/`{status,data}` 解包、401、重试 |
 | Models | 真实 JSON fixtures | 字段缺失/类型漂移 |
 | Repositories | 注入 stub client | 路径、参数、异常映射 |
 | ViewModels | 注入 fake repository | 分页、去重、错误态、取消 |

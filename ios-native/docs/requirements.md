@@ -20,7 +20,7 @@ HGhub 现有 Tauri 2 + React 19 四端客户端（Windows / macOS / Android / iO
 |---|---|---|
 | G-01 | 纯原生 UI | 无 WKWebView 承载主界面；仅系统分享/外链等系统弹层 |
 | G-02 | 播放体验对齐或优于 WebView | AVPlayer 直连 HLS，支持系统全屏/PiP/AirPlay/锁屏控制 |
-| G-03 | 与上游协议一致 | 复用现有边缘信封、播放接口、封面解密、线路规则 |
+| G-03 | 与上游协议一致 | 复用直连 API、播放接口、封面解密、线路规则（2026-11-25 上游停用边缘信封） |
 | G-04 | 可维护 | 文档先行；分层 MVVM + Repository；契约 fixtures |
 | G-05 | 可学习 | 代码结构清晰，关键决策有 ADR，不堆砌框架 |
 
@@ -207,8 +207,8 @@ HGhub 现有 Tauri 2 + React 19 四端客户端（Windows / macOS / Android / iO
 
 | ID | 约束/假设 | 影响 |
 |---|---|---|
-| C-01 | 上游把 `/api/**` 收敛为 `POST /api/edge/request` 信封 | 所有业务请求走统一信封；播放接口例外 |
-| C-02 | 播放接口必须直连，body 为 `{}` | 不能走信封，否则 `请求无法处理` |
+| C-01 | ~~上游把 `/api/**` 收敛为边缘信封~~（2026-11-25 已停用） | 所有业务请求改为直连 `{base}/api/**` |
+| C-02 | 播放接口必须直连，body 为 `{}` | 直连；带 id/ep 会返回「播放参数无效」 |
 | C-03 | 封面是 AES-128-CBC 密文 | 需要本地解密后再解码 |
 | C-04 | 域名会漂移 | 线路切换是第一优先级能力 |
 | C-05 | 不搬 Rust 内核 | 网络/解密/线路用 Swift 重写，按契约对齐 |
@@ -231,8 +231,8 @@ HGhub 现有 Tauri 2 + React 19 四端客户端（Windows / macOS / Android / iO
 
 | 术语 | 含义 |
 |---|---|
-| 边缘信封 | `POST /api/edge/request`，body 内再描述真实 method/path/body |
-| playback | `POST /api/videos/{id}/episodes/{ep}/playback`，直连、不走信封 |
+| API | `{base}/api/**` 直连；兼容 `{data}` / `{status,data}` |
+| playback | `POST /api/videos/{id}/episodes/{ep}/playback`，body `{}` |
 | 线路 | 上游 base URL；固定 2 条 + 发布页镜像 |
 | 封面 | 列表/详情图，AES-128-CBC 密文 |
 | Feed | 竖滑全屏播放列表 |
